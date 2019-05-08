@@ -16,6 +16,7 @@ package infoschema
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/pingcap/tidb/table"
 	"sort"
 	"sync"
 	"time"
@@ -32,7 +33,6 @@ import (
 	"github.com/pingcap/tidb/statistics"
 	"github.com/pingcap/tidb/store/helper"
 	"github.com/pingcap/tidb/store/tikv"
-	"github.com/pingcap/tidb/table"
 	"github.com/pingcap/tidb/types"
 	binaryJson "github.com/pingcap/tidb/types/json"
 	"github.com/pingcap/tidb/util/pdapi"
@@ -80,6 +80,7 @@ const (
 	tableAnalyzeStatus                      = "ANALYZE_STATUS"
 	tableTiKVRegionStatus                   = "TIKV_REGION_STATUS"
 	tableTiKVRegionPeers                    = "TIKV_REGION_PEERS"
+	tableToy                                = "TOY"
 )
 
 type columnInfo struct {
@@ -129,6 +130,10 @@ func buildTableMeta(tableName string, cs []columnInfo) *model.TableInfo {
 		Charset: mysql.DefaultCharset,
 		Collate: mysql.DefaultCollationName,
 	}
+}
+
+var tableToyCols = []columnInfo{
+	{"joke", mysql.TypeVarchar, 64, 0, nil, nil},
 }
 
 var schemataCols = []columnInfo{
@@ -921,6 +926,15 @@ var filesCols = []columnInfo{
 	{"CHECKSUM", mysql.TypeLonglong, 21, 0, nil, nil},
 	{"STATUS", mysql.TypeVarchar, 20, 0, nil, nil},
 	{"EXTRA", mysql.TypeVarchar, 255, 0, nil, nil},
+}
+
+func dataForToy(schemas []*model.DBInfo) [][]types.Datum {
+	rows := make([][]types.Datum, 0, 5)
+	for i := 0; i < 5; i++ {
+		record := types.MakeDatums(fmt.Sprintf("joke_%d", i))
+		rows = append(rows, record)
+	}
+	return rows
 }
 
 func dataForSchemata(schemas []*model.DBInfo) [][]types.Datum {
@@ -1749,6 +1763,7 @@ var tableNameToColumns = map[string][]columnInfo{
 	tableAnalyzeStatus:                      tableAnalyzeStatusCols,
 	tableTiKVRegionStatus:                   tableTiKVRegionStatusCols,
 	tableTiKVRegionPeers:                    tableTiKVRegionPeersCols,
+	tableToy:                                tableToyCols,
 }
 
 func createInfoSchemaTable(handle *Handle, meta *model.TableInfo) *infoschemaTable {
@@ -1852,6 +1867,8 @@ func (it *infoschemaTable) getRows(ctx sessionctx.Context, cols []*table.Column)
 		fullRows, err = dataForTiKVRegionStatus(ctx)
 	case tableTiKVRegionPeers:
 		fullRows, err = dataForTikVRegionPeers(ctx)
+	case tableToy:
+		fullRows = dataForToy(nil)
 	}
 	if err != nil {
 		return nil, err
