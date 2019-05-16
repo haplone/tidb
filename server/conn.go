@@ -572,7 +572,9 @@ func (cc *clientConn) addMetrics(cmd byte, startTime time.Time, err error) {
 // dispatch handles client request based on command which is the first byte of the data.
 // It also gets a token from server which is used to limit the concurrently handling clients.
 // The most frequently used command is ComQuery.
+// code_analysis 这里根据mysql协议的cmd类型分发sql
 func (cc *clientConn) dispatch(data []byte) error {
+	log.Printf("we got sql: %s \n", data)
 	span := opentracing.StartSpan("server.dispatch")
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
 
@@ -599,6 +601,7 @@ func (cc *clientConn) dispatch(data []byte) error {
 	case mysql.ComQuit:
 		return io.EOF
 	case mysql.ComQuery: // Most frequently used command.
+		// code_analysis 我们处理的sql主要都是走这个分支
 		// For issue 1989
 		// Input payload may end with byte '\0', we didn't find related mysql document about it, but mysql
 		// implementation accept that case. So trim the last '\0' here as if the payload an EOF string.
@@ -853,6 +856,7 @@ func (cc *clientConn) handleLoadStats(ctx context.Context, loadStatsInfo *execut
 // There is a special query `load data` that does not return result, which is handled differently.
 // Query `load stats` does not return result either.
 func (cc *clientConn) handleQuery(ctx context.Context, sql string) (err error) {
+	log.Println("handle sql to QueryCtx[TiDBContext]: %s", sql)
 	rs, err := cc.ctx.Execute(ctx, sql)
 	if err != nil {
 		metrics.ExecuteErrorCounter.WithLabelValues(metrics.ExecuteErrorToLabel(err)).Inc()

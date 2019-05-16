@@ -762,12 +762,14 @@ func (s *session) executeStatement(ctx context.Context, connID uint64, stmtNode 
 	return recordSets, nil
 }
 
+// code_analysis 真正开工
 func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.RecordSet, err error) {
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		span, ctx = opentracing.StartSpanFromContext(ctx, "session.Execute")
 		defer span.Finish()
 	}
 
+	// code_analysis 重置事务的上下文
 	s.PrepareTxnCtx(ctx)
 	var (
 		cacheKey         kvcache.Key
@@ -777,6 +779,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 		planCacheEnabled = s.sessionVars.PlanCacheEnabled // Its value is read from the global configuration, and it will be only updated in tests.
 	)
 
+	// code_analysis 这边主要是为TP类sql优化的
 	if planCacheEnabled {
 		schemaVersion := domain.GetDomain(s).InfoSchema().SchemaMetaVersion()
 		readOnly := s.Txn() == nil || s.Txn().IsReadOnly()
@@ -786,6 +789,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 	}
 
 	if hitCache {
+		// code_analysis TP优化分支，与insert 无关
 		metrics.PlanCacheCounter.WithLabelValues("select").Inc()
 		stmtNode := cacheValue.(*plan.SQLCacheValue).StmtNode
 		stmt := &executor.ExecStmt{
@@ -803,6 +807,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			return nil, errors.Trace(err)
 		}
 	} else {
+		// code_analysis 为txn加载配置variables
 		err = s.loadCommonGlobalVariablesIfNeeded()
 		if err != nil {
 			return nil, errors.Trace(err)
@@ -812,6 +817,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 
 		// Step1: Compile query string to abstract syntax trees(ASTs).
 		startTS := time.Now()
+		// code_analysis 将sql文本转为ast数组
 		stmtNodes, err := s.ParseSQL(ctx, sql, charsetInfo, collation)
 		if err != nil {
 			s.rollbackOnError(ctx)
@@ -822,12 +828,15 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 
 		compiler := executor.Compiler{Ctx: s}
 		for _, stmtNode := range stmtNodes {
+			// code_analysis sql执行前，再重置下上下文
 			s.PrepareTxnCtx(ctx)
 
 			// Step2: Transform abstract syntax tree to a physical plan(stored in executor.ExecStmt).
 			startTS = time.Now()
 			// Some executions are done in compile stage, so we reset them before compile.
+			// code_analysis 根据不同的ast类型，准备上下文
 			executor.ResetStmtCtx(s, stmtNode)
+			// code_analysis 将ast通过 logical plan, physical plan 最终转为executor,plan 的优化等核心都在这里
 			stmt, err := compiler.Compile(ctx, stmtNode)
 			if err != nil {
 				s.rollbackOnError(ctx)

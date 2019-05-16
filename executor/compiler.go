@@ -40,17 +40,20 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 		defer span1.Finish()
 	}
 
+	// code_analysis 获取所有db、table的元数据句柄
 	infoSchema := GetInfoSchema(c.Ctx)
 	if err := plan.Preprocess(c.Ctx, stmtNode, infoSchema, false); err != nil {
 		return nil, errors.Trace(err)
 	}
 
+	// code_analysis logical plan -> physical plan，包括优化器
 	finalPlan, err := plan.Optimize(c.Ctx, stmtNode, infoSchema)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
 	CountStmtNode(stmtNode, c.Ctx.GetSessionVars().InRestrictedSQL)
+	// code_analysis 根据sql开销决定是否log
 	isExpensive := logExpensiveQuery(stmtNode, finalPlan)
 
 	return &ExecStmt{

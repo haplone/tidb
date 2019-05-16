@@ -14,6 +14,7 @@
 package plan
 
 import (
+	"log"
 	"math"
 
 	"github.com/juju/errors"
@@ -63,11 +64,13 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 		is:        is,
 		colMapper: make(map[*ast.ColumnNameExpr]int),
 	}
+	// code_analysis 通过不同的ast类型，进入对应分支构建logical plan
 	p := builder.build(node)
 	if builder.err != nil {
 		return nil, errors.Trace(builder.err)
 	}
 
+	// code_analysis 这边就是使用visitInfo 去privilege 模块校验用户权限
 	// Maybe it's better to move this to Preprocess, but check privilege need table
 	// information, which is collected into visitInfo during logical plan builder.
 	if pm := privilege.GetPrivilegeManager(ctx); pm != nil {
@@ -76,10 +79,12 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 		}
 	}
 
+	// code_analysis 优化主要是为select准备的
 	if logic, ok := p.(LogicalPlan); ok {
 		return doOptimize(builder.optFlag, logic)
 	}
 	if execPlan, ok := p.(*Execute); ok {
+		log.Printf(" not sure insert will goes here: %s", node)
 		err := execPlan.optimizePreparedPlan(ctx, is)
 		return p, errors.Trace(err)
 	}

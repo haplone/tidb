@@ -64,6 +64,7 @@ func (b *planBuilder) rewrite(expr ast.ExprNode, p LogicalPlan, aggMapper map[*a
 // rewriteWithPreprocess is for handling the situation that we need to adjust the input ast tree
 // before really using its node in `expressionRewriter.Leave`. In that case, we first call
 // er.preprocess(expr), which returns a new expr. Then we use the new expr in `Leave`.
+// code_analysis to_specify
 func (b *planBuilder) rewriteWithPreprocess(expr ast.ExprNode, p LogicalPlan, aggMapper map[*ast.AggregateFuncExpr]int, asScalar bool, preprocess func(ast.Node) ast.Node) (
 	expression.Expression, LogicalPlan, error) {
 	b.rewriterCounter++
@@ -90,6 +91,7 @@ func (b *planBuilder) rewriteWithPreprocess(expr ast.ExprNode, p LogicalPlan, ag
 	if p != nil {
 		rewriter.schema = p.Schema()
 	}
+	// code_analysis 使用访问者模式进行改写
 	expr.Accept(rewriter)
 	if rewriter.err != nil {
 		return nil, nil, errors.Trace(rewriter.err)
@@ -270,6 +272,7 @@ func (er *expressionRewriter) Enter(inNode ast.Node) (ast.Node, bool) {
 		return er.handleScalarSubquery(v)
 	case *ast.ParenthesesExpr:
 	case *ast.ValuesExpr:
+		// code_analysis to_specify
 		col, err := er.schema.FindColumn(v.Column.Name)
 		if err != nil {
 			er.err = errors.Trace(err)
@@ -702,6 +705,7 @@ func (er *expressionRewriter) Leave(originInNode ast.Node) (retNode ast.Node, ok
 	case *ast.AggregateFuncExpr, *ast.ColumnNameExpr, *ast.ParenthesesExpr, *ast.WhenClause,
 		*ast.SubqueryExpr, *ast.ExistsSubqueryExpr, *ast.CompareSubqueryExpr, *ast.ValuesExpr:
 	case *ast.ValueExpr:
+		// code_analysis to_specify
 		value := &expression.Constant{Value: v.Datum, RetType: &v.Type}
 		er.ctxStack = append(er.ctxStack, value)
 	case *ast.ParamMarkerExpr:
@@ -717,6 +721,7 @@ func (er *expressionRewriter) Leave(originInNode ast.Node) (retNode ast.Node, ok
 	case *ast.FuncCallExpr:
 		er.funcCallToExpression(v)
 	case *ast.ColumnName:
+		// code_analysis to_specify
 		er.toColumn(v)
 	case *ast.UnaryOperationExpr:
 		er.unaryOpToExpression(v)

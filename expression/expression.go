@@ -254,8 +254,10 @@ func TableInfo2Schema(tbl *model.TableInfo) *Schema {
 
 // TableInfo2SchemaWithDBName converts table info to schema.
 func TableInfo2SchemaWithDBName(dbName model.CIStr, tbl *model.TableInfo) *Schema {
+	// code_analysis 主要过滤非public 列
 	cols := ColumnInfos2ColumnsWithDBName(dbName, tbl.Name, tbl.Columns)
 	keys := make([]KeyInfo, 0, len(tbl.Indices)+1)
+	// code_analysis 还需要准备索引相关列
 	for _, idx := range tbl.Indices {
 		if !idx.Unique || idx.State != model.StatePublic {
 			continue
@@ -297,6 +299,8 @@ func TableInfo2SchemaWithDBName(dbName model.CIStr, tbl *model.TableInfo) *Schem
 }
 
 // ColumnInfos2ColumnsWithDBName converts a slice of ColumnInfo to a slice of Column.
+// code_analysis 将public 状态的model.ColumnInfo 转为 expression.Column
+// 这边的model.StatePublic 需要参考online ddl change，有兴趣需要看spanner
 func ColumnInfos2ColumnsWithDBName(dbName, tblName model.CIStr, colInfos []*model.ColumnInfo) []*Column {
 	columns := make([]*Column, 0, len(colInfos))
 	for i, col := range colInfos {
