@@ -2047,6 +2047,7 @@ func (s *testSessionSuite) TestDisableTxnAutoRetry(c *C) {
 }
 
 // code_analysis test for analysis how insert sql runs
+// cd session
 // go test -check.f=TestInsert222
 func (s *testSessionSuite) TestInsert222(c *C) {
 	tk1 := testkit.NewTestKitWithInit(c, s.store)
