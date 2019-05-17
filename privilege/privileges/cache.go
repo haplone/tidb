@@ -407,6 +407,7 @@ func (p *MySQLPrivilege) matchColumns(user, host, db, table, column string) *col
 
 // RequestVerification checks whether the user have sufficient privileges to do the operation.
 func (p *MySQLPrivilege) RequestVerification(user, host, db, table, column string, priv mysql.PrivilegeType) bool {
+	log.Printf("check privilege by four level")
 	record1 := p.matchUser(user, host)
 	if record1 != nil && record1.Privileges&priv > 0 {
 		return true

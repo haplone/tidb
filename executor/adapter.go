@@ -119,6 +119,7 @@ func (a *recordSet) Close() error {
 }
 
 // ExecStmt implements the ast.Statement interface, it builds a plan.Plan to an ast.Statement.
+// code_analysis to_specify
 type ExecStmt struct {
 	// InfoSchema stores a reference to the schema information.
 	InfoSchema infoschema.InfoSchema
@@ -179,6 +180,9 @@ func (a *ExecStmt) RebuildPlan() error {
 // like the INSERT, UPDATE statements, it executes in this function, if the Executor returns
 // result, execution is done after this function returns, in the returned ast.RecordSet Next method.
 func (a *ExecStmt) Exec(ctx context.Context) (ast.RecordSet, error) {
+	log.Printf("--------------------")
+	log.Printf("step into executor phase")
+	log.Printf("ExecStmt: %s", a)
 	a.startTime = time.Now()
 	sctx := a.Ctx
 	if _, ok := a.Plan.(*plan.Analyze); ok && sctx.GetSessionVars().InRestrictedSQL {
@@ -241,8 +245,10 @@ func (a *ExecStmt) Exec(ctx context.Context) (ast.RecordSet, error) {
 }
 
 func (a *ExecStmt) handleNoDelayExecutor(ctx context.Context, sctx sessionctx.Context, e Executor, pi processinfoSetter) (ast.RecordSet, error) {
+	log.Info("handleNoDelayExecutor")
 	// Check if "tidb_snapshot" is set for the write executors.
 	// In history read mode, we can not do write operations.
+	// code_analysis to_specify
 	switch e.(type) {
 	case *DeleteExec, *InsertExec, *UpdateExec, *ReplaceExec, *LoadData, *DDLExec:
 		snapshotTS := sctx.GetSessionVars().SnapshotTS
@@ -277,6 +283,7 @@ func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
 	// code_analysis 默认点查high priority, analyze 默认low priority
 	priority := kv.PriorityNormal
 	if _, ok := a.Plan.(*plan.Execute); !ok {
+		log.Printf("insert is a plan.Execute")
 		// Do not sync transaction for Execute statement, because the real optimization work is done in
 		// "ExecuteExec.Build".
 		var err error
@@ -287,6 +294,7 @@ func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
 		} else {
 			log.Debugf("con:%d ActivePendingTxn %s", ctx.GetSessionVars().ConnectionID, a.Text)
 			err = ctx.ActivePendingTxn()
+			log.Printf("check insert sql is not point get")
 		}
 		if err != nil {
 			return nil, errors.Trace(err)
@@ -297,6 +305,7 @@ func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
 		} else {
 			switch {
 			case isPointGet:
+				// code_analysis point get sql is high priority
 				priority = kv.PriorityHigh
 			case a.Expensive:
 				priority = kv.PriorityLow
@@ -323,6 +332,8 @@ func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
 		a.isPreparedStmt = true
 		a.Plan = executorExec.plan
 		e = executorExec.stmtExec
+	} else {
+		log.Printf("InsertExec is not a ExecuteExec")
 	}
 	return e, nil
 }

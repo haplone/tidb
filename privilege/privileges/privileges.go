@@ -54,10 +54,12 @@ type UserPrivileges struct {
 
 // RequestVerification implements the Manager interface.
 func (p *UserPrivileges) RequestVerification(db, table, column string, priv mysql.PrivilegeType) bool {
+	log.Printf("when we check privilege,we will skip some special case")
 	if !Enable || SkipWithGrant {
 		return true
 	}
 
+	// code_analysis used by background sql,for example due with statis
 	if p.user == "" && p.host == "" {
 		return true
 	}

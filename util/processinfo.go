@@ -14,6 +14,7 @@
 package util
 
 import (
+	"fmt"
 	"time"
 )
 
@@ -36,4 +37,8 @@ type SessionManager interface {
 	// ShowProcessList returns map[connectionID]ProcessInfo.
 	ShowProcessList() map[uint64]ProcessInfo
 	Kill(connectionID uint64, query bool)
+}
+
+func (pi ProcessInfo) String() string {
+	return fmt.Sprintf("sessionid[%d],user[%s],host[%s],db[%s],cmd[%s],info[%s]", pi.ID, pi.User, pi.Host, pi.DB, pi.Command, pi.Info)
 }

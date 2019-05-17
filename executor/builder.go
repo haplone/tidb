@@ -15,6 +15,7 @@ package executor
 
 import (
 	"bytes"
+	"github.com/sirupsen/logrus"
 	"math"
 	"sort"
 	"strings"
@@ -57,6 +58,7 @@ type executorBuilder struct {
 }
 
 func newExecutorBuilder(ctx sessionctx.Context, is infoschema.InfoSchema, priority int) *executorBuilder {
+	logrus.Printf("new executorBuilder")
 	return &executorBuilder{
 		ctx:      ctx,
 		is:       is,
@@ -496,6 +498,7 @@ func (b *executorBuilder) buildSet(v *plan.Set) Executor {
 
 // code_analysis to_specify
 func (b *executorBuilder) buildInsert(v *plan.Insert) Executor {
+	logrus.Printf("build executor.InsertExec by executorBuilder")
 	selectExec := b.build(v.SelectPlan)
 	if b.err != nil {
 		b.err = errors.Trace(b.err)

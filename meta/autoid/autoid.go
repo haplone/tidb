@@ -149,6 +149,7 @@ func (alloc *allocator) Rebase(tableID, requiredBase int64, allocIDs bool) error
 }
 
 // Alloc implements autoid.Allocator Alloc interface.
+// code_analysis to_specify
 func (alloc *allocator) Alloc(tableID int64) (int64, error) {
 	if tableID == 0 {
 		return 0, errInvalidTableID.Gen("Invalid tableID")

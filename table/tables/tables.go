@@ -355,6 +355,7 @@ func (t *Table) getRollbackableMemStore(ctx sessionctx.Context) kv.RetrieverMuta
 
 // AddRecord implements table.Table AddRecord interface.
 func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleCheck bool) (recordID int64, err error) {
+	log.Printf("AddRecord in Table: %s", r)
 	var hasRecordID bool
 	cols := t.Cols()
 	if len(r) > len(cols) {
@@ -375,9 +376,11 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 		if err != nil {
 			return 0, errors.Trace(err)
 		}
+		log.Printf("alloc record id: %d", recordID)
 	}
 
 	txn := ctx.Txn()
+	log.Printf("get txn, prepare to write data")
 	sessVars := ctx.GetSessionVars()
 	// when ImportingData or BatchCheck is true,
 	// no needs to check the key constrains, so we names the variable skipCheck.

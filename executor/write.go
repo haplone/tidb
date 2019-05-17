@@ -16,6 +16,7 @@ package executor
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/juju/errors"
@@ -1078,6 +1079,7 @@ func (e *InsertExec) checkBatchLimit() error {
 	sessVars := e.ctx.GetSessionVars()
 	batchInsert := sessVars.BatchInsert && !sessVars.InTxn()
 	batchSize := sessVars.DMLBatchSize
+	log.Printf("batch insert rows check happens here: batch[%b], rowCount[%d], batchSize[%d]", batchInsert, e.rowCount, batchSize)
 	if batchInsert && e.rowCount >= batchSize {
 		e.ctx.StmtCommit()
 		if err := e.ctx.NewTxn(); err != nil {
@@ -1281,6 +1283,8 @@ func batchMarkDupRows(ctx sessionctx.Context, t table.Table, rows [][]types.Datu
 
 // Next implements Exec Next interface.
 func (e *InsertExec) Next(ctx context.Context, chk *chunk.Chunk) error {
+	log.Printf("under volcano , next for InsertExec")
+	log.Printf("use chunk to save memory")
 	chk.Reset()
 	if e.finished {
 		return nil
@@ -1294,6 +1298,7 @@ func (e *InsertExec) Next(ctx context.Context, chk *chunk.Chunk) error {
 	if len(e.children) > 0 && e.children[0] != nil {
 		rows, err = e.getRowsSelectChunk(ctx, cols, e.IgnoreErr)
 	} else {
+		log.Printf("has no children")
 		rows, err = e.getRows(cols, e.IgnoreErr)
 	}
 	if err != nil {
@@ -1364,8 +1369,10 @@ func (e *InsertValues) getColumns(tableCols []*table.Column) ([]*table.Column, e
 	} else {
 		// If e.Columns are empty, use all columns instead.
 		cols = tableCols
+		log.Printf("use all columns")
 	}
 	for _, col := range cols {
+		log.Printf("column in InsertValues: %s", col.Name.L)
 		if col.Name.L == model.ExtraHandleName.L {
 			e.hasExtraHandle = true
 			break
@@ -1445,6 +1452,7 @@ func (e *InsertValues) getRows(cols []*table.Column, ignoreErr bool) (rows [][]t
 		return nil, errors.Trace(err)
 	}
 
+	log.Printf("len of Lists : %d", len(e.Lists))
 	rows = make([][]types.Datum, len(e.Lists))
 	length := len(e.Lists[0])
 	for i, list := range e.Lists {
@@ -1497,9 +1505,12 @@ func (e *InsertValues) getRow(cols []*table.Column, list []expression.Expression
 		if err := e.fillDefaultValues(row, hasValue, ignoreErr); err != nil {
 			return nil, errors.Trace(err)
 		}
+	} else {
+		log.Printf("has not default value")
 	}
 
 	for i, expr := range list {
+		log.Printf("expr type: %s", reflect.TypeOf(expr))
 		val, err := expr.Eval(row)
 		if err = e.handleErr(cols[i], rowIdx, err, ignoreErr); err != nil {
 			return nil, errors.Trace(err)

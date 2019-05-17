@@ -54,7 +54,7 @@ import (
 	"github.com/pingcap/tidb/util/charset"
 	"github.com/pingcap/tidb/util/chunk"
 	"github.com/pingcap/tidb/util/kvcache"
-	binlog "github.com/pingcap/tipb/go-binlog"
+	"github.com/pingcap/tipb/go-binlog"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -735,6 +735,11 @@ func (s *session) SetProcessInfo(sql string) {
 		pi.User = s.sessionVars.User.Username
 		pi.Host = s.sessionVars.User.Hostname
 	}
+	if strings.EqualFold("", sql) {
+		log.Printf("empty processinfo")
+	} else {
+		log.Printf("set processinfo : %s", pi)
+	}
 	s.processInfo.Store(pi)
 }
 
@@ -855,6 +860,8 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			// Step3: Cache the physical plan if possible.
 			if planCacheEnabled && stmt.Cacheable && len(stmtNodes) == 1 && !s.GetSessionVars().StmtCtx.HistogramsNotLoad() {
 				plan.GlobalPlanCache.Put(cacheKey, plan.NewSQLCacheValue(stmtNode, stmt.Plan, stmt.Expensive))
+			} else {
+				log.Printf("insert sql will not cache ,it's for TP select")
 			}
 
 			// Step4: Execute the physical plan.

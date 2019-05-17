@@ -15,7 +15,6 @@ package plan
 
 import (
 	"github.com/sirupsen/logrus"
-	"log"
 	"math"
 
 	"github.com/juju/errors"
@@ -84,12 +83,16 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 	// code_analysis 优化主要是为select准备的
 	if logic, ok := p.(LogicalPlan); ok {
 		return doOptimize(builder.optFlag, logic)
+	} else {
+		logrus.Printf("insert will not trigger optimize")
 	}
 	if execPlan, ok := p.(*Execute); ok {
-		log.Printf(" not sure insert will goes here: %s", node)
 		err := execPlan.optimizePreparedPlan(ctx, is)
 		return p, errors.Trace(err)
+	} else {
+		logrus.Printf("Insert is not a Execute")
 	}
+
 	return p, nil
 }
 
@@ -109,6 +112,7 @@ func BuildLogicalPlan(ctx sessionctx.Context, node ast.Node, is infoschema.InfoS
 }
 
 func checkPrivilege(pm privilege.Manager, vs []visitInfo) bool {
+	logrus.Printf("check privilege by visitinfo: %s", vs)
 	for _, v := range vs {
 		if !pm.RequestVerification(v.db, v.table, v.column, v.privilege) {
 			return false

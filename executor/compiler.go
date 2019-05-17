@@ -70,6 +70,7 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 }
 
 func logExpensiveQuery(stmtNode ast.StmtNode, finalPlan plan.Plan) (expensive bool) {
+	log.Printf("log expensive sql, need to specify what is expensive")
 	expensive = isExpensiveQuery(finalPlan)
 	if !expensive {
 		return
@@ -84,6 +85,7 @@ func logExpensiveQuery(stmtNode ast.StmtNode, finalPlan plan.Plan) (expensive bo
 	return
 }
 
+// code_analysis to_specify
 func isExpensiveQuery(p plan.Plan) bool {
 	switch x := p.(type) {
 	case plan.PhysicalPlan:

@@ -167,6 +167,7 @@ func newBaseExecutor(ctx sessionctx.Context, schema *expression.Schema, id strin
 		cols := schema.Columns
 		e.retFieldTypes = make([]*types.FieldType, len(cols))
 		for i := range cols {
+			log.Printf("prepare return columns: %s", cols[i])
 			e.retFieldTypes[i] = cols[i].RetType
 		}
 	}

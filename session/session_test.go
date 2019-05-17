@@ -2050,6 +2050,7 @@ func (s *testSessionSuite) TestDisableTxnAutoRetry(c *C) {
 // go test -check.f=TestInsert222
 func (s *testSessionSuite) TestInsert222(c *C) {
 	tk1 := testkit.NewTestKitWithInit(c, s.store)
+	c.Assert(tk1.Se.Auth(&auth.UserIdentity{Username: "root"}, nil, nil), IsTrue)
 	tk1.MustExec(`CREATE TABLE test.t (id      VARCHAR(31),name VARCHAR(50),age    int,key id_idx (id)
 )`)
 	tk1.MustExec(`INSERT INTO t VALUES ("pingcap001", "pingcap", 3);`)

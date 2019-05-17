@@ -145,6 +145,7 @@ func CastValues(ctx sessionctx.Context, rec []types.Datum, cols []*Column, ignor
 }
 
 // CastValue casts a value based on column type.
+// code_analysis to_specify
 func CastValue(ctx sessionctx.Context, val types.Datum, col *model.ColumnInfo) (casted types.Datum, err error) {
 	sc := ctx.GetSessionVars().StmtCtx
 	casted, err = val.ConvertTo(sc, &col.FieldType)
@@ -179,6 +180,7 @@ func CastValue(ctx sessionctx.Context, val types.Datum, col *model.ColumnInfo) (
 		}
 	}
 
+	log.Printf("cast value, before: %s  --- after: %s", val, casted)
 	return casted, errors.Trace(err)
 }
 
