@@ -208,6 +208,7 @@ func (a *ExecStmt) Exec(ctx context.Context) (ast.RecordSet, error) {
 		return nil, errors.Trace(err)
 	}
 
+	// code_analysis prepare for show processinfo
 	var pi processinfoSetter
 	if raw, ok := sctx.(processinfoSetter); ok {
 		pi = raw
@@ -273,6 +274,7 @@ func (a *ExecStmt) handleNoDelayExecutor(ctx context.Context, sctx sessionctx.Co
 
 // buildExecutor build a executor from plan, prepared statement may need additional procedure.
 func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
+	// code_analysis 默认点查high priority, analyze 默认low priority
 	priority := kv.PriorityNormal
 	if _, ok := a.Plan.(*plan.Execute); !ok {
 		// Do not sync transaction for Execute statement, because the real optimization work is done in

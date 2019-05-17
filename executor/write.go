@@ -790,6 +790,7 @@ type defaultVal struct {
 }
 
 // InsertValues is the data to insert.
+// code_analysis insert_concept
 type InsertValues struct {
 	baseExecutor
 
@@ -816,6 +817,7 @@ type InsertValues struct {
 }
 
 // InsertExec represents an insert executor.
+// code_analysis insert_concept
 type InsertExec struct {
 	*InsertValues
 
@@ -1313,6 +1315,7 @@ func (e *InsertExec) Close() error {
 
 // Open implements the Executor Close interface.
 func (e *InsertExec) Open(ctx context.Context) error {
+	log.Printf("open InsertExec for %s", e.Table.Meta().Name.L)
 	if e.SelectExec != nil {
 		return e.SelectExec.Open(ctx)
 	}

@@ -43,7 +43,7 @@ import (
 	"github.com/pingcap/tidb/util/sqlexec"
 	"github.com/pingcap/tidb/util/testkit"
 	"github.com/pingcap/tidb/util/testleak"
-	binlog "github.com/pingcap/tipb/go-binlog"
+	"github.com/pingcap/tipb/go-binlog"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
@@ -2044,4 +2044,13 @@ func (s *testSessionSuite) TestDisableTxnAutoRetry(c *C) {
 
 	tk1.MustExec("update no_retry set id = 7")
 	tk1.MustExec("commit")
+}
+
+// code_analysis test for analysis how insert sql runs
+// go test -check.f=TestInsert222
+func (s *testSessionSuite) TestInsert222(c *C) {
+	tk1 := testkit.NewTestKitWithInit(c, s.store)
+	tk1.MustExec(`CREATE TABLE test.t (id      VARCHAR(31),name VARCHAR(50),age    int,key id_idx (id)
+)`)
+	tk1.MustExec(`INSERT INTO t VALUES ("pingcap001", "pingcap", 3);`)
 }

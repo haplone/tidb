@@ -574,7 +574,7 @@ func (cc *clientConn) addMetrics(cmd byte, startTime time.Time, err error) {
 // The most frequently used command is ComQuery.
 // code_analysis 这里根据mysql协议的cmd类型分发sql
 func (cc *clientConn) dispatch(data []byte) error {
-	log.Printf("we got sql: %s \n", data)
+	log.Printf("---------------we got sql: %s \n", data)
 	span := opentracing.StartSpan("server.dispatch")
 	ctx := opentracing.ContextWithSpan(context.Background(), span)
 

@@ -16,6 +16,7 @@ package plan
 import (
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/model"
+	"github.com/sirupsen/logrus"
 )
 
 // ResolveIndices implements Plan interface.
@@ -180,6 +181,7 @@ func (p *Update) ResolveIndices() {
 
 // ResolveIndices implements Plan interface.
 func (p *Insert) ResolveIndices() {
+	logrus.Println("resolve indices")
 	for _, asgn := range p.OnDuplicate {
 		asgn.Col.ResolveIndices(p.tableSchema)
 		asgn.Expr.ResolveIndices(p.tableSchema)

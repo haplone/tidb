@@ -16,8 +16,6 @@ package server
 import (
 	"crypto/tls"
 	"fmt"
-	"log"
-
 	"github.com/juju/errors"
 	"github.com/pingcap/tidb/ast"
 	"github.com/pingcap/tidb/kv"
@@ -27,6 +25,7 @@ import (
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/auth"
 	"github.com/pingcap/tidb/util/chunk"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -199,7 +198,7 @@ func (tc *TiDBContext) WarningCount() uint16 {
 
 // Execute implements QueryCtx Execute method.
 func (tc *TiDBContext) Execute(ctx context.Context, sql string) (rs []ResultSet, err error) {
-	log.Printf("handle sql to Session[session]: %s", sql)
+	logrus.Printf("handle sql to Session[session]: %s", sql)
 	rsList, err := tc.session.Execute(ctx, sql)
 	if err != nil {
 		return

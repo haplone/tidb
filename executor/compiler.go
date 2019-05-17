@@ -15,6 +15,7 @@ package executor
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/juju/errors"
 	"github.com/opentracing/opentracing-go"
@@ -42,6 +43,7 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 
 	// code_analysis 获取所有db、table的元数据句柄
 	infoSchema := GetInfoSchema(c.Ctx)
+	log.Printf("get infoschema: %s", strings.Join(infoSchema.AllSchemaNames(), ","))
 	if err := plan.Preprocess(c.Ctx, stmtNode, infoSchema, false); err != nil {
 		return nil, errors.Trace(err)
 	}

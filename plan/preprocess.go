@@ -14,7 +14,9 @@
 package plan
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 	"strings"
 
 	"github.com/juju/errors"
@@ -31,6 +33,7 @@ import (
 
 // Preprocess resolves table names of the node, and checks some statements validation.
 func Preprocess(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema, inPrepare bool) error {
+	logrus.Printf("use visit to resolve tbl name and do some check: %d", node.Text())
 	v := preprocessor{is: is, ctx: ctx, inPrepare: inPrepare}
 	node.Accept(&v)
 	return errors.Trace(v.err)
@@ -74,6 +77,7 @@ func (p *preprocessor) Enter(in ast.Node) (out ast.Node, skipChildren bool) {
 	case *ast.DeleteTableList:
 		return in, true
 	}
+	logrus.Printf(" preprocessor.Enter: %s", reflect.TypeOf(in))
 	return in, p.err != nil
 }
 
@@ -104,7 +108,9 @@ func (p *preprocessor) Leave(in ast.Node) (out ast.Node, ok bool) {
 			p.err = ErrUnknownExplainFormat.GenByArgs(x.Format)
 		}
 	case *ast.TableName:
+		logrus.Printf("before resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
 		p.handleTableName(x)
+		logrus.Printf("after resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
 	}
 
 	return in, p.err == nil
@@ -521,6 +527,7 @@ func (p *preprocessor) handleTableName(tn *ast.TableName) {
 	tn.TableInfo = table.Meta()
 	dbInfo, _ := p.is.SchemaByName(tn.Schema)
 	tn.DBInfo = dbInfo
+	logrus.Printf("handle tbl name in preprocessor: %s.%s", tn.TableInfo.Name, dbInfo.Name)
 }
 
 func (p *preprocessor) resolveShowStmt(node *ast.ShowStmt) {

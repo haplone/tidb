@@ -14,6 +14,7 @@
 package plan
 
 import (
+	"github.com/sirupsen/logrus"
 	"log"
 	"math"
 
@@ -58,6 +59,7 @@ type logicalOptRule interface {
 // Optimize does optimization and creates a Plan.
 // The node must be prepared first.
 func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (Plan, error) {
+	logrus.Printf("goes into optimize ")
 	ctx.GetSessionVars().PlanID = 0
 	builder := &planBuilder{
 		ctx:       ctx,

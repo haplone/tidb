@@ -494,6 +494,7 @@ func (b *executorBuilder) buildSet(v *plan.Set) Executor {
 	return e
 }
 
+// code_analysis to_specify
 func (b *executorBuilder) buildInsert(v *plan.Insert) Executor {
 	selectExec := b.build(v.SelectPlan)
 	if b.err != nil {

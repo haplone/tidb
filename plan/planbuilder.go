@@ -15,7 +15,9 @@ package plan
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"log"
+	"reflect"
 	"strings"
 
 	"github.com/juju/errors"
@@ -144,7 +146,7 @@ func (b *planBuilder) build(node ast.Node) Plan {
 	case *ast.ExplainStmt:
 		return b.buildExplain(x)
 	case *ast.InsertStmt:
-		log.Printf("insert goes here : %s", node.Text())
+		log.Printf("build insert goes here : %s", node.Text())
 		return b.buildInsert(x)
 	case *ast.LoadDataStmt:
 		return b.buildLoadData(x)
@@ -860,6 +862,7 @@ func (b *planBuilder) resolveGeneratedColumns(columns []*table.Column, onDups ma
 		if !column.IsGenerated() {
 			continue
 		}
+		logrus.Printf("generate value for %s", column.Name)
 		columnName := &ast.ColumnName{Name: column.Name}
 		columnName.SetText(column.Name.O)
 
@@ -894,7 +897,6 @@ func (b *planBuilder) resolveGeneratedColumns(columns []*table.Column, onDups ma
 
 func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 	ts, ok := insert.Table.TableRefs.Left.(*ast.TableSource)
-	log.Printf("get target table name: %s", ts.Text())
 	if !ok {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()
 		return nil
@@ -904,16 +906,16 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()
 		return nil
 	}
-	log.Printf("specify tbl to %s.%s", tn.Schema.L, tn.Name.L)
+	logrus.Printf("specify tbl to %s.%s", tn.Schema.L, tn.Name.L)
 	tableInfo := tn.TableInfo
 	// Build Schema with DBName otherwise ColumnRef with DBName cannot match any Column in Schema.
 	schema := expression.TableInfo2SchemaWithDBName(tn.Schema, tableInfo)
 	tableInPlan, ok := b.is.TableByID(tableInfo.ID)
-	log.Printf("got table.Table %s", tableInPlan.Meta())
 	if !ok {
 		b.err = errors.Errorf("Can't get table %s.", tableInfo.Name.O)
 		return nil
 	}
+	logrus.Printf("got table.Table %s", tableInPlan.Meta())
 
 	insertPlan := Insert{
 		Table:       tableInPlan,
@@ -923,6 +925,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		Priority:    insert.Priority,
 		IgnoreErr:   insert.IgnoreErr,
 	}.init(b.ctx)
+	logrus.Printf("got logical plan : %s", reflect.TypeOf(insertPlan))
 
 	// code_analysis 这边的visitInfo 用于权限校验，比如用户是否有权限写这个表
 	b.visitInfo = append(b.visitInfo, visitInfo{
@@ -930,6 +933,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		db:        tn.DBInfo.Name.L,
 		table:     tableInfo.Name.L,
 	})
+	logrus.Printf("use visit info to check privilege: %s", b.visitInfo)
 
 	columnByName := make(map[string]*table.Column, len(insertPlan.Table.Cols()))
 	for _, col := range insertPlan.Table.Cols() {
@@ -940,7 +944,9 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 	// It's for INSERT INTO t (...) VALUES (...)
 	if len(insert.Columns) > 0 {
 		for _, col := range insert.Columns {
+			//logrus.Printf("=----",col.Name)
 			if column, ok := columnByName[col.Name.L]; ok {
+				//logrus.Printf("value column: %s",column.ColumnInfo)
 				// code_analysis 自动生成的列不能手动设置值
 				if column.IsGenerated() {
 					b.err = ErrBadGeneratedColumn.GenByArgs(col.Name.O, tableInfo.Name.O)
@@ -970,6 +976,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		// code_analysis 对应 INSERT INTO t VALUES ("pingcap001", "pingcap", 3),("pingcap002", "pingcap", 2) 后面括号里的
 		exprList := make([]expression.Expression, 0, len(valuesItem))
 		for i, valueItem := range valuesItem {
+			logrus.Printf("value for insert: %s", reflect.TypeOf(valueItem))
 			var expr expression.Expression
 			var err error
 			if dft, ok := valueItem.(*ast.DefaultExpr); ok {
@@ -983,6 +990,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 					Value:   val.Datum,
 					RetType: &val.Type,
 				}
+				logrus.Printf("%s -- %s -- %s -- %d", val.Datum, &val.Type, val.GetString(), val.GetInt64())
 			} else {
 				expr, _, err = b.rewriteWithPreprocess(valueItem, mockTablePlan, nil, true, checkRefColumn)
 			}
@@ -1009,6 +1017,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		}
 		for i := 0; i < effectiveValuesLen; i++ {
 			col := tableInfo.Columns[i]
+			logrus.Printf("fill column by idx: %s", col.Name)
 			if col.IsGenerated() {
 				b.err = ErrBadGeneratedColumn.GenByArgs(col.Name.O, tableInfo.Name.O)
 				return nil

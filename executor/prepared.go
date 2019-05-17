@@ -14,6 +14,7 @@
 package executor
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 	"sort"
 
@@ -179,6 +180,7 @@ func (e *PrepareExec) Next(ctx context.Context, chk *chunk.Chunk) error {
 // ExecuteExec represents an EXECUTE executor.
 // It cannot be executed by itself, all it needs to do is to build
 // another Executor from a prepared statement.
+// code_analysis insert_concept
 type ExecuteExec struct {
 	baseExecutor
 
@@ -214,6 +216,7 @@ func (e *ExecuteExec) Build() error {
 		return errors.Trace(b.err)
 	}
 	e.stmtExec = stmtExec
+	// code_analysis ???
 	ResetStmtCtx(e.ctx, e.stmt)
 	CountStmtNode(e.stmt, e.ctx.GetSessionVars().InRestrictedSQL)
 	logExpensiveQuery(e.stmt, e.plan)
@@ -298,6 +301,7 @@ func ResetStmtCtx(ctx sessionctx.Context, s ast.StmtNode) {
 		sc.IgnoreZeroInDate = !sessVars.StrictSQLMode || stmt.IgnoreErr
 		sc.Priority = stmt.Priority
 	case *ast.InsertStmt:
+		logrus.Printf("reset stmt ctx for insert : %s", stmt.Text())
 		sc.IgnoreTruncate = false
 		sc.TruncateAsWarning = !sessVars.StrictSQLMode || stmt.IgnoreErr
 		sc.InInsertStmt = true

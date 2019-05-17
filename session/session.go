@@ -764,6 +764,8 @@ func (s *session) executeStatement(ctx context.Context, connID uint64, stmtNode 
 
 // code_analysis 真正开工
 func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.RecordSet, err error) {
+	log.Println("==================")
+	log.Printf("execute sql starts here: %s", sql)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		span, ctx = opentracing.StartSpanFromContext(ctx, "session.Execute")
 		defer span.Finish()
@@ -828,6 +830,11 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 
 		compiler := executor.Compiler{Ctx: s}
 		for _, stmtNode := range stmtNodes {
+			switch n := stmtNode.(type) {
+			case *ast.InsertStmt:
+				log.Printf("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
+
+			}
 			// code_analysis sql执行前，再重置下上下文
 			s.PrepareTxnCtx(ctx)
 
