@@ -838,7 +838,8 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			switch n := stmtNode.(type) {
 			case *ast.InsertStmt:
 				log.Printf("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
-
+				asn := ast.ShowAstName{}
+				stmtNode.Accept(asn)
 			}
 			// code_analysis sql执行前，再重置下上下文
 			s.PrepareTxnCtx(ctx)
@@ -1314,6 +1315,7 @@ const loadCommonGlobalVarsSQL = "select HIGH_PRIORITY * from mysql.global_variab
 
 // loadCommonGlobalVariablesIfNeeded loads and applies commonly used global variables for the session.
 func (s *session) loadCommonGlobalVariablesIfNeeded() error {
+	log.Printf("load common global variables")
 	vars := s.sessionVars
 	if vars.CommonGlobalLoaded {
 		return nil
@@ -1334,6 +1336,7 @@ func (s *session) loadCommonGlobalVariablesIfNeeded() error {
 		varName := row.GetString(0)
 		varVal := row.GetDatum(1, &fields[1].Column.FieldType)
 		if _, ok := vars.GetSystemVar(varName); !ok {
+			log.Printf("load variable__ %s: %s", varName, varVal.GetRaw())
 			err = variable.SetSessionSystemVar(s.sessionVars, varName, varVal)
 			if err != nil {
 				return errors.Trace(err)

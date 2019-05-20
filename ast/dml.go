@@ -17,6 +17,8 @@ import (
 	"github.com/pingcap/tidb/model"
 	"github.com/pingcap/tidb/mysql"
 	"github.com/pingcap/tidb/util/auth"
+	"log"
+	"reflect"
 )
 
 var (
@@ -149,6 +151,25 @@ type IndexHint struct {
 	HintScope  IndexHintScope
 }
 
+type ShowAstName struct {
+}
+
+func (a ShowAstName) Enter(n Node) (node Node, skipChildren bool) {
+	log.Printf("init ast enter: %s", reflect.TypeOf(n))
+	return n, false
+}
+
+func (a ShowAstName) Leave(n Node) (node Node, ok bool) {
+	log.Printf("init ast leave: %s", reflect.TypeOf(n))
+	return n, true
+}
+
+func L(visitor Visitor, format string, v ...interface{}) {
+	if _, ok := visitor.(ShowAstName); ok {
+		log.Printf(format, v...)
+	}
+}
+
 // Accept implements Node Accept interface.
 func (n *TableName) Accept(v Visitor) (Node, bool) {
 	newNode, skipChildren := v.Enter(n)
@@ -156,6 +177,8 @@ func (n *TableName) Accept(v Visitor) (Node, bool) {
 		return v.Leave(newNode)
 	}
 	n = newNode.(*TableName)
+
+	L(v, "tableName is %s.%s", n.Schema.L, n.Name.L)
 	return v.Leave(n)
 }
 
@@ -744,13 +767,16 @@ func (n *InsertStmt) Accept(v Visitor) (Node, bool) {
 	}
 	n.Table = node.(*TableRefsClause)
 
+	L(v, "InsertStmt columns: ")
 	for i, val := range n.Columns {
 		node, ok := val.Accept(v)
 		if !ok {
 			return n, false
 		}
 		n.Columns[i] = node.(*ColumnName)
+		L(v, "column: %s", n.Columns[i].Name.L)
 	}
+	L(v, "InsertStmt Lists")
 	for i, list := range n.Lists {
 		for j, val := range list {
 			node, ok := val.Accept(v)
@@ -760,6 +786,7 @@ func (n *InsertStmt) Accept(v Visitor) (Node, bool) {
 			n.Lists[i][j] = node.(ExprNode)
 		}
 	}
+	L(v, "InsertStmt Setlist")
 	for i, val := range n.Setlist {
 		node, ok := val.Accept(v)
 		if !ok {

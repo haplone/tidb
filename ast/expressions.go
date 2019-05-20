@@ -14,7 +14,9 @@
 package ast
 
 import (
+	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"regexp"
 	"strconv"
@@ -127,6 +129,11 @@ func (n *ValueExpr) Accept(v Visitor) (Node, bool) {
 		return v.Leave(newNode)
 	}
 	n = newNode.(*ValueExpr)
+	if _, ok := v.(ShowAstName); ok {
+		writer := bytes.NewBufferString("")
+		n.Format(writer)
+		logrus.Printf("ValueExpr: %s", writer)
+	}
 	return v.Leave(n)
 }
 
