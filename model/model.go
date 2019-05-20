@@ -14,6 +14,7 @@
 package model
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -338,6 +339,10 @@ func (index *IndexInfo) Clone() *IndexInfo {
 		ni.Columns[i] = index.Columns[i].Clone()
 	}
 	return &ni
+}
+
+func (index *IndexInfo) String() string {
+	return fmt.Sprintf("id[%d],name[%s],table[%s],state[%s],tp[%s],columns[%s]", index.ID, index.Name, index.Table, index.State, index.Tp, index.Columns)
 }
 
 // HasPrefixIndex returns whether any columns of this index uses prefix length.

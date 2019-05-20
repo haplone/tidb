@@ -108,9 +108,9 @@ func (p *preprocessor) Leave(in ast.Node) (out ast.Node, ok bool) {
 			p.err = ErrUnknownExplainFormat.GenByArgs(x.Format)
 		}
 	case *ast.TableName:
-		//logrus.Printf("before resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
+		logrus.Printf("before resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
 		p.handleTableName(x)
-		//logrus.Printf("after resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
+		logrus.Printf("after resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
 	}
 
 	logrus.Printf(" preprocessor.Leave: %s", reflect.TypeOf(in))
@@ -528,7 +528,7 @@ func (p *preprocessor) handleTableName(tn *ast.TableName) {
 	tn.TableInfo = table.Meta()
 	dbInfo, _ := p.is.SchemaByName(tn.Schema)
 	tn.DBInfo = dbInfo
-	//logrus.Printf("handle tbl name in preprocessor: %s.%s", tn.TableInfo.Name, dbInfo.Name)
+	logrus.Printf("handle tbl name in preprocessor, fill TableInfo DBInfo: %s.%s", dbInfo.Name, tn.TableInfo.Name)
 }
 
 func (p *preprocessor) resolveShowStmt(node *ast.ShowStmt) {

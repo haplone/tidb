@@ -16,6 +16,8 @@ package tables
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"io"
 	"unicode/utf8"
 
@@ -104,6 +106,11 @@ type index struct {
 	prefix  kv.Key
 }
 
+// code_analysis to_specify
+func (i index) String() string {
+	return fmt.Sprintf("table/tables/index: %s.%s [prefix: %s]", i.tblInfo.Name.L, i.idxInfo.Name.L, i.prefix)
+}
+
 // NewIndex builds a new Index object.
 func NewIndex(tableInfo *model.TableInfo, indexInfo *model.IndexInfo) table.Index {
 	index := &index{
@@ -188,7 +195,9 @@ func (c *index) GenIndexKey(sc *stmtctx.StatementContext, indexedValues []types.
 // Create creates a new entry in the kvIndex data.
 // If the index is unique and there is an existing entry with the same key,
 // Create will return the existing entry's handle as the first return value, ErrKeyExists as the second return value.
+// code_analysis to_specify should specify by unit test
 func (c *index) Create(ctx sessionctx.Context, rm kv.RetrieverMutator, indexedValues []types.Datum, h int64) (int64, error) {
+	logrus.Printf("create index row, and save to buffer for: %d ,row values: %s", h, indexedValues)
 	writeBufs := ctx.GetSessionVars().GetWriteStmtBufs()
 	skipCheck := ctx.GetSessionVars().ImportingData || ctx.GetSessionVars().StmtCtx.BatchCheck
 	key, distinct, err := c.GenIndexKey(ctx.GetSessionVars().StmtCtx, indexedValues, h, writeBufs.IndexKeyBuf)

@@ -205,6 +205,7 @@ func EncodeValue(sc *stmtctx.StatementContext, raw types.Datum) ([]byte, error) 
 // Row layout: colID1, value1, colID2, value2, .....
 // valBuf and values pass by caller, for reducing EncodeRow allocates tempory bufs. If you pass valBuf and values as nil,
 // EncodeRow will allocate it.
+// code_analysis to_specify should_specify_by_unit_test
 func EncodeRow(sc *stmtctx.StatementContext, row []types.Datum, colIDs []int64, valBuf []byte, values []types.Datum) ([]byte, error) {
 	if len(row) != len(colIDs) {
 		return nil, errors.Errorf("EncodeRow error: data and columnID count not match %d vs %d", len(row), len(colIDs))

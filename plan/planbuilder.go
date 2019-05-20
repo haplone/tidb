@@ -16,7 +16,6 @@ package plan
 import (
 	"fmt"
 	"github.com/sirupsen/logrus"
-	"log"
 	"reflect"
 	"strings"
 
@@ -38,6 +37,10 @@ type visitInfo struct {
 	db        string
 	table     string
 	column    string
+}
+
+func (v visitInfo) String() string {
+	return fmt.Sprintf("%s.%s.%s -- %s", v.db, v.table, v.column, mysql.Priv2UserCol[v.privilege])
 }
 
 type tableHintInfo struct {
@@ -146,7 +149,7 @@ func (b *planBuilder) build(node ast.Node) Plan {
 	case *ast.ExplainStmt:
 		return b.buildExplain(x)
 	case *ast.InsertStmt:
-		log.Printf("build insert goes here : %s", node.Text())
+		logrus.Printf("build insert goes here : %s", node.Text())
 		return b.buildInsert(x)
 	case *ast.LoadDataStmt:
 		return b.buildLoadData(x)
@@ -896,6 +899,7 @@ func (b *planBuilder) resolveGeneratedColumns(columns []*table.Column, onDups ma
 }
 
 func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
+	logrus.Printf("build insert in planBuilder")
 	ts, ok := insert.Table.TableRefs.Left.(*ast.TableSource)
 	if !ok {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()
@@ -906,10 +910,11 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()
 		return nil
 	}
-	logrus.Printf("specify tbl to %s.%s", tn.Schema.L, tn.Name.L)
+	//logrus.Printf("specify tbl to %s.%s", tn.Schema.L, tn.Name.L)
 	tableInfo := tn.TableInfo
 	// Build Schema with DBName otherwise ColumnRef with DBName cannot match any Column in Schema.
 	schema := expression.TableInfo2SchemaWithDBName(tn.Schema, tableInfo)
+	logrus.Printf("got schema for expression: %s", schema)
 	tableInPlan, ok := b.is.TableByID(tableInfo.ID)
 	if !ok {
 		b.err = errors.Errorf("Can't get table %s.", tableInfo.Name.O)

@@ -180,6 +180,7 @@ func (p *Update) ResolveIndices() {
 }
 
 // ResolveIndices implements Plan interface.
+// code_analysis to_specify
 func (p *Insert) ResolveIndices() {
 	logrus.Println("resolve indices")
 	for _, asgn := range p.OnDuplicate {

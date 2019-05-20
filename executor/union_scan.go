@@ -14,8 +14,7 @@
 package executor
 
 import (
-	"sort"
-
+	"fmt"
 	"github.com/juju/errors"
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/model"
@@ -23,6 +22,8 @@ import (
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/chunk"
 	"golang.org/x/net/context"
+	"sort"
+	"strings"
 )
 
 // DirtyDB stores uncommitted write operations for a transaction.
@@ -30,6 +31,14 @@ import (
 type DirtyDB struct {
 	// tables is a map whose key is tableID.
 	tables map[int64]*DirtyTable
+}
+
+func (d DirtyDB) String() string {
+	var r []string
+	for _, tbl := range d.tables {
+		r = append(r, tbl.String())
+	}
+	return strings.Join(r, ",")
 }
 
 // AddRow adds a row to the DirtyDB.
@@ -77,6 +86,17 @@ type DirtyTable struct {
 	addedRows   map[int64]types.DatumRow
 	deletedRows map[int64]struct{}
 	truncated   bool
+}
+
+func (d DirtyTable) String() string {
+	var ars, drs []string
+	for k, _ := range d.addedRows {
+		ars = append(ars, string(k))
+	}
+	for k, _ := range d.deletedRows {
+		drs = append(drs, string(k))
+	}
+	return fmt.Sprintf("DirtyTable truncated[%v], addRowsKey: [%s], deletedRowsKey: [%s]", d.truncated, strings.Join(ars, ","), strings.Join(drs, ","))
 }
 
 // GetDirtyDB returns the DirtyDB bind to the context.

@@ -16,6 +16,7 @@ package plan
 import (
 	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 
 	"github.com/juju/errors"
 	"github.com/pingcap/tidb/ast"
@@ -65,11 +66,13 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 		is:        is,
 		colMapper: make(map[*ast.ColumnNameExpr]int),
 	}
+	logrus.Printf("user planBuilder to build plan")
 	// code_analysis 通过不同的ast类型，进入对应分支构建logical plan
 	p := builder.build(node)
 	if builder.err != nil {
 		return nil, errors.Trace(builder.err)
 	}
+	logrus.Printf("got plan: %s", reflect.TypeOf(p))
 
 	// code_analysis 这边就是使用visitInfo 去privilege 模块校验用户权限
 	// Maybe it's better to move this to Preprocess, but check privilege need table

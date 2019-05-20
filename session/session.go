@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -851,6 +852,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			executor.ResetStmtCtx(s, stmtNode)
 			// code_analysis 将ast通过 logical plan, physical plan 最终转为executor,plan 的优化等核心都在这里
 			stmt, err := compiler.Compile(ctx, stmtNode)
+			log.Printf("got ExecStmt: %s", reflect.TypeOf(stmt))
 			if err != nil {
 				s.rollbackOnError(ctx)
 				log.Warnf("con:%d compile error:\n%v\n%s", connID, err, sql)
@@ -1362,6 +1364,7 @@ func (s *session) PrepareTxnCtx(ctx context.Context) {
 		SchemaVersion: is.SchemaMetaVersion(),
 		CreateTime:    time.Now(),
 	}
+	log.Printf("reset session var TransactionContext")
 	if !s.sessionVars.IsAutocommit() {
 		s.sessionVars.SetStatusFlag(mysql.ServerStatusInTrans, true)
 	}

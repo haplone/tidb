@@ -16,6 +16,7 @@
 package kv
 
 import (
+	"github.com/sirupsen/logrus"
 	"sync/atomic"
 
 	"github.com/juju/errors"
@@ -52,6 +53,7 @@ func NewMemDbBuffer(cap int) MemBuffer {
 
 // Seek creates an Iterator.
 func (m *memDbBuffer) Seek(k Key) (Iterator, error) {
+	logrus.Printf("seek in memDbBuffer by leveldb NewIterator")
 	var i Iterator
 	if k == nil {
 		i = &memDbIter{iter: m.db.NewIterator(&util.Range{}), reverse: false}
@@ -90,6 +92,7 @@ func (m *memDbBuffer) Get(k Key) ([]byte, error) {
 }
 
 // Set associates key with value.
+// code_analysis for_trigger
 func (m *memDbBuffer) Set(k Key, v []byte) error {
 	if len(v) == 0 {
 		return errors.Trace(ErrCannotSetNilValue)

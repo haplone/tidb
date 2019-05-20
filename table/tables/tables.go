@@ -35,7 +35,7 @@ import (
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util"
 	"github.com/pingcap/tidb/util/codec"
-	binlog "github.com/pingcap/tipb/go-binlog"
+	"github.com/pingcap/tipb/go-binlog"
 	log "github.com/sirupsen/logrus"
 	"github.com/spaolacci/murmur3"
 )
@@ -347,8 +347,10 @@ func (t *Table) getRollbackableMemStore(ctx sessionctx.Context) kv.RetrieverMuta
 	bs := ctx.GetSessionVars().GetWriteStmtBufs().BufStore
 	if bs == nil {
 		bs = kv.NewBufferStore(ctx.Txn(), kv.DefaultTxnMembufCap)
+		log.Printf("new kv.BufferStore")
 	} else {
 		bs.Reset()
+		log.Printf("reset BufferStore")
 	}
 	return bs
 }
@@ -420,11 +422,13 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 	writeBufs := sessVars.GetWriteStmtBufs()
 	adjustRowValuesBuf(writeBufs, len(row))
 	key := t.RecordKey(recordID)
+	log.Printf("gen record key: %s", key)
 	writeBufs.RowValBuf, err = tablecodec.EncodeRow(ctx.GetSessionVars().StmtCtx, row, colIDs, writeBufs.RowValBuf, writeBufs.AddRowValues)
 	if err != nil {
 		return 0, errors.Trace(err)
 	}
 	value := writeBufs.RowValBuf
+	log.Printf("gen record valueL: %s", value)
 	if err = txn.Set(key, value); err != nil {
 		return 0, errors.Trace(err)
 	}
@@ -467,6 +471,7 @@ func (t *Table) genIndexKeyStr(colVals []types.Datum) (string, error) {
 				return "", errors.Trace(err)
 			}
 		}
+		log.Printf("check index col NULL: %s", cvs)
 		strVals = append(strVals, cvs)
 	}
 	return strings.Join(strVals, "-"), nil
@@ -487,17 +492,20 @@ func (t *Table) addIndices(ctx sessionctx.Context, recordID int64, r []types.Dat
 	writeBufs := ctx.GetSessionVars().GetWriteStmtBufs()
 	indexVals := writeBufs.IndexValsBuf
 	for _, v := range t.WritableIndices() {
+		log.Printf("get writable index: %s", v)
 		var err2 error
 		indexVals, err2 = v.FetchValues(r, indexVals)
 		if err2 != nil {
 			return 0, errors.Trace(err2)
 		}
+		log.Printf("get writable index row values: %s", indexVals)
 		var dupKeyErr error
 		if !skipCheck && (v.Meta().Unique || v.Meta().Primary) {
 			entryKey, err1 := t.genIndexKeyStr(indexVals)
 			if err1 != nil {
 				return 0, errors.Trace(err1)
 			}
+			log.Printf("get entry key for index: %s", entryKey)
 			dupKeyErr = kv.ErrKeyExists.FastGen("Duplicate entry '%s' for key '%s'", entryKey, v.Meta().Name)
 			txn.SetOption(kv.PresumeKeyNotExistsError, dupKeyErr)
 		}

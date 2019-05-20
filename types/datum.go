@@ -65,6 +65,11 @@ type Datum struct {
 	x         interface{} // x hold all other types.
 }
 
+func (d Datum) String() string {
+	val, _ := d.ToString()
+	return val
+}
+
 // Copy deep copies a Datum.
 func (d *Datum) Copy() *Datum {
 	ret := *d

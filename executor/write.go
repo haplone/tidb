@@ -856,6 +856,7 @@ func (e *InsertExec) insertOneRow(row []types.Datum) (int64, error) {
 func (e *InsertExec) exec(ctx context.Context, rows [][]types.Datum) (types.DatumRow, error) {
 	// If tidb_batch_insert is ON and not in a transaction, we could use BatchInsert mode.
 	sessVars := e.ctx.GetSessionVars()
+	log.Printf("get session variables: %s", sessVars)
 	defer sessVars.CleanBuffers()
 
 	e.rowCount = 0
@@ -1079,7 +1080,7 @@ func (e *InsertExec) checkBatchLimit() error {
 	sessVars := e.ctx.GetSessionVars()
 	batchInsert := sessVars.BatchInsert && !sessVars.InTxn()
 	batchSize := sessVars.DMLBatchSize
-	log.Printf("batch insert rows check happens here: batch[%b], rowCount[%d], batchSize[%d]", batchInsert, e.rowCount, batchSize)
+	log.Printf("batch insert rows check happens here: batch[%v], rowCount[%d], batchSize[%d]", batchInsert, e.rowCount, batchSize)
 	if batchInsert && e.rowCount >= batchSize {
 		e.ctx.StmtCommit()
 		if err := e.ctx.NewTxn(); err != nil {
@@ -1452,7 +1453,7 @@ func (e *InsertValues) getRows(cols []*table.Column, ignoreErr bool) (rows [][]t
 		return nil, errors.Trace(err)
 	}
 
-	log.Printf("len of Lists : %d", len(e.Lists))
+	log.Printf("len of Lists(row) : %d", len(e.Lists))
 	rows = make([][]types.Datum, len(e.Lists))
 	length := len(e.Lists[0])
 	for i, list := range e.Lists {

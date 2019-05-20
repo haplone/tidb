@@ -15,6 +15,8 @@ package variable
 
 import (
 	"crypto/tls"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -114,6 +116,7 @@ func (tc *TransactionContext) UpdateDeltaForTable(tableID int64, delta int64, co
 	for key, val := range colSize {
 		item.ColSize[key] += val
 	}
+	logrus.Printf("update delta for table[%d]: %s", tableID, item)
 	tc.TableDeltaMap[tableID] = item
 }
 
@@ -591,4 +594,8 @@ type TableDelta struct {
 	Delta   int64
 	Count   int64
 	ColSize map[int64]int64
+}
+
+func (t TableDelta) String() string {
+	return fmt.Sprintf("TableDelta: Delta[%d],Count[%d],ColSize:[%s]", t.Delta, t.Count, t.ColSize)
 }
