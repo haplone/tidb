@@ -15,6 +15,8 @@ package kv
 
 import (
 	"github.com/juju/errors"
+	"github.com/sirupsen/logrus"
+	"reflect"
 )
 
 var (
@@ -40,6 +42,7 @@ type BufferStore struct {
 
 // NewBufferStore creates a BufferStore using r for read.
 func NewBufferStore(r Retriever, cap int) *BufferStore {
+	logrus.Printf("new BufferStore with Retriever[%s],cap[%d]", reflect.TypeOf(r), cap)
 	if cap <= 0 {
 		cap = DefaultTxnMembufCap
 	}
@@ -107,7 +110,9 @@ func (s *BufferStore) WalkBuffer(f func(k Key, v []byte) error) error {
 
 // SaveTo saves all buffered kv pairs into a Mutator.
 func (s *BufferStore) SaveTo(m Mutator) error {
+	logrus.Printf("BufferStore SaveTo %s", reflect.TypeOf(m))
 	err := s.WalkBuffer(func(k Key, v []byte) error {
+		logrus.Printf("walk buffer to check value is empty")
 		if len(v) == 0 {
 			return errors.Trace(m.Delete(k))
 		}

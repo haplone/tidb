@@ -213,6 +213,7 @@ func (t *Table) IndexPrefix() kv.Key {
 
 // RecordKey implements table.Table RecordKey interface.
 func (t *Table) RecordKey(h int64) kv.Key {
+	log.Printf("GenRecordKey recordPrefix[%s], h[%d]", t.recordPrefix, h)
 	return tablecodec.EncodeRecordKey(t.recordPrefix, h)
 }
 
@@ -329,6 +330,7 @@ func (t *Table) rebuildIndices(ctx sessionctx.Context, rm kv.RetrieverMutator, h
 // adjustRowValuesBuf adjust writeBufs.AddRowValues length, AddRowValues stores the inserting values that is used
 // by tablecodec.EncodeRow, the encoded row format is `id1, colval, id2, colval`, so the correct length is rowLen * 2. If
 // the inserting row has null value, AddRecord will skip it, so the rowLen will be different, so we need to adjust it.
+// code_analysis to_specify
 func adjustRowValuesBuf(writeBufs *variable.WriteStmtBufs, rowLen int) {
 	adjustLen := rowLen * 2
 	if writeBufs.AddRowValues == nil || cap(writeBufs.AddRowValues) < adjustLen {
@@ -357,7 +359,7 @@ func (t *Table) getRollbackableMemStore(ctx sessionctx.Context) kv.RetrieverMuta
 
 // AddRecord implements table.Table AddRecord interface.
 func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleCheck bool) (recordID int64, err error) {
-	log.Printf("AddRecord in Table: %s", r)
+	log.Printf("AddRecord in Table %s for row: %s", t.Name.L, r)
 	var hasRecordID bool
 	cols := t.Cols()
 	if len(r) > len(cols) {
@@ -368,6 +370,7 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 		for _, col := range cols {
 			if col.IsPKHandleColumn(t.meta) {
 				recordID = r[col.Offset].GetInt64()
+				log.Printf("got recordId: %d", recordID)
 				hasRecordID = true
 				break
 			}
@@ -428,7 +431,7 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 		return 0, errors.Trace(err)
 	}
 	value := writeBufs.RowValBuf
-	log.Printf("gen record valueL: %s", value)
+	log.Printf("gen record value: %s", value)
 	if err = txn.Set(key, value); err != nil {
 		return 0, errors.Trace(err)
 	}

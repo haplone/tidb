@@ -15,6 +15,8 @@ package kv
 
 import (
 	"bytes"
+	"github.com/sirupsen/logrus"
+	"reflect"
 
 	"github.com/juju/errors"
 )
@@ -104,6 +106,7 @@ type lazyMemBuffer struct {
 }
 
 func (lmb *lazyMemBuffer) Get(k Key) ([]byte, error) {
+	logrus.Printf("lazyMemBuffer Get value by key[%s] in %s", k, reflect.TypeOf(lmb.mb))
 	if lmb.mb == nil {
 		return nil, errors.Trace(ErrNotExist)
 	}
@@ -112,6 +115,7 @@ func (lmb *lazyMemBuffer) Get(k Key) ([]byte, error) {
 }
 
 func (lmb *lazyMemBuffer) Set(key Key, value []byte) error {
+	logrus.Printf("lazyMemBuffer Set value by key[%s] %s", key, value)
 	if lmb.mb == nil {
 		lmb.mb = NewMemDbBuffer(lmb.cap)
 	}

@@ -269,6 +269,7 @@ func CompileExecutePreparedStmt(ctx sessionctx.Context, ID uint32, args ...inter
 
 // ResetStmtCtx resets the StmtContext.
 // Before every execution, we must clear statement context.
+// code_analysis to_specify
 func ResetStmtCtx(ctx sessionctx.Context, s ast.StmtNode) {
 	sessVars := ctx.GetSessionVars()
 	sc := new(stmtctx.StatementContext)

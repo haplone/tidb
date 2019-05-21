@@ -59,20 +59,21 @@ type logicalOptRule interface {
 // Optimize does optimization and creates a Plan.
 // The node must be prepared first.
 func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (Plan, error) {
-	logrus.Printf("goes into optimize ")
+	logrus.Printf("------------------ step into optimize ")
 	ctx.GetSessionVars().PlanID = 0
 	builder := &planBuilder{
 		ctx:       ctx,
 		is:        is,
 		colMapper: make(map[*ast.ColumnNameExpr]int),
 	}
-	logrus.Printf("user planBuilder to build plan")
+	logrus.Printf("use planBuilder to build plan")
 	// code_analysis 通过不同的ast类型，进入对应分支构建logical plan
+	// if insert plan.Insert
 	p := builder.build(node)
 	if builder.err != nil {
 		return nil, errors.Trace(builder.err)
 	}
-	logrus.Printf("got plan: %s", reflect.TypeOf(p))
+	logrus.Printf("got  plan: %s", reflect.TypeOf(p))
 
 	// code_analysis 这边就是使用visitInfo 去privilege 模块校验用户权限
 	// Maybe it's better to move this to Preprocess, but check privilege need table
@@ -87,7 +88,7 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 	if logic, ok := p.(LogicalPlan); ok {
 		return doOptimize(builder.optFlag, logic)
 	} else {
-		logrus.Printf("insert will not trigger optimize")
+		logrus.Printf("insert will not trigger optimize, not a logical plan")
 	}
 	if execPlan, ok := p.(*Execute); ok {
 		err := execPlan.optimizePreparedPlan(ctx, is)

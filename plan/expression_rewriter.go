@@ -109,6 +109,7 @@ func (b *planBuilder) rewriteWithPreprocess(expr ast.ExprNode, p LogicalPlan, ag
 	return rewriter.ctxStack[0], rewriter.p, nil
 }
 
+// code_analysis to_specify
 type expressionRewriter struct {
 	ctxStack []expression.Expression
 	p        LogicalPlan

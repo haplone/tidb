@@ -25,6 +25,7 @@ import (
 	"github.com/pingcap/tipb/go-binlog"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
+	"reflect"
 )
 
 // TxnState wraps kv.Transaction to provide a new kv.Transaction.
@@ -116,6 +117,7 @@ type dirtyTableOperation struct {
 
 // Commit overrides the Transaction interface.
 func (st *TxnState) Commit(ctx context.Context) error {
+	log.Printf("TxnState Commit")
 	if st.fail != nil {
 		// If any error happen during StmtCommit, don't commit this transaction.
 		err := st.fail
@@ -140,6 +142,7 @@ func (st *TxnState) Get(k kv.Key) ([]byte, error) {
 	if kv.IsErrNotFound(err) {
 		val, err = st.Transaction.Get(k)
 	}
+	log.Printf("TxnState Get value by key[%s] in %s : %s", k, reflect.TypeOf(st.buf), val)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

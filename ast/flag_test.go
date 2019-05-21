@@ -126,7 +126,7 @@ func (ts *testFlagSuite) TestFlag(c *C) {
 			ast.FlagConstant,
 		},
 		{
-			"a in (1, count(*), 3)",
+			"a in (1, Count(*), 3)",
 			ast.FlagConstant | ast.FlagHasReference | ast.FlagHasAggregateFunc,
 		},
 		{

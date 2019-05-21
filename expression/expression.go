@@ -304,7 +304,7 @@ func TableInfo2SchemaWithDBName(dbName model.CIStr, tbl *model.TableInfo) *Schem
 // code_analysis 将public 状态的model.ColumnInfo 转为 expression.Column
 // 这边的model.StatePublic 需要参考online ddl change，有兴趣需要看spanner
 func ColumnInfos2ColumnsWithDBName(dbName, tblName model.CIStr, colInfos []*model.ColumnInfo) []*Column {
-	logrus.Printf("filter public columns")
+	logrus.Printf("filter public columns and convert model.ColumnInfo -> expression.Column")
 	columns := make([]*Column, 0, len(colInfos))
 	for i, col := range colInfos {
 		if col.State != model.StatePublic {

@@ -212,6 +212,7 @@ func (s *tikvSnapshot) Get(k kv.Key) ([]byte, error) {
 	if len(val) == 0 {
 		return nil, kv.ErrNotExist
 	}
+	log.Printf("tikvSnapshot Get value by key[%s] %s", k, val)
 	return val, nil
 }
 

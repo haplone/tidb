@@ -116,7 +116,7 @@ func (tc *TransactionContext) UpdateDeltaForTable(tableID int64, delta int64, co
 	for key, val := range colSize {
 		item.ColSize[key] += val
 	}
-	logrus.Printf("update delta for table[%d]: %s", tableID, item)
+	logrus.Printf("TransactionContext update delta for table[%d]: %s", tableID, item)
 	tc.TableDeltaMap[tableID] = item
 }
 
@@ -127,6 +127,7 @@ func (tc *TransactionContext) ClearDelta() {
 
 // WriteStmtBufs can be used by insert/replace/delete/update statement.
 // TODO: use a common memory pool to replace this.
+// code_analysis to_specify important
 type WriteStmtBufs struct {
 	// RowValBuf is used by tablecodec.EncodeRow, to reduce runtime.growslice.
 	RowValBuf []byte
@@ -143,6 +144,7 @@ type WriteStmtBufs struct {
 }
 
 func (ib *WriteStmtBufs) clean() {
+	logrus.Printf("sessionctx.variable.WriteStmtBufs clean")
 	ib.BufStore = nil
 	ib.RowValBuf = nil
 	ib.AddRowValues = nil

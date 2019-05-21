@@ -17,7 +17,7 @@ import (
 	"github.com/pingcap/tidb/model"
 	"github.com/pingcap/tidb/mysql"
 	"github.com/pingcap/tidb/util/auth"
-	"log"
+	"github.com/sirupsen/logrus"
 	"reflect"
 )
 
@@ -152,21 +152,32 @@ type IndexHint struct {
 }
 
 type ShowAstName struct {
+	Count *int
 }
 
 func (a ShowAstName) Enter(n Node) (node Node, skipChildren bool) {
-	log.Printf("init ast enter: %s", reflect.TypeOf(n))
+	var blank []byte
+	for i := 0; i < *a.Count; i++ {
+		blank = append(blank, []byte(" - ")...)
+	}
+	logrus.Printf("init ast enter: %s%s", blank, reflect.TypeOf(n))
+	*a.Count = *a.Count + 1
 	return n, false
 }
 
 func (a ShowAstName) Leave(n Node) (node Node, ok bool) {
-	log.Printf("init ast leave: %s", reflect.TypeOf(n))
+	*a.Count -= 1
+	var blank []byte
+	for i := 0; i < *a.Count; i++ {
+		blank = append(blank, []byte(" - ")...)
+	}
+	logrus.Printf("init ast leave: %s%s", blank, reflect.TypeOf(n))
 	return n, true
 }
 
 func L(visitor Visitor, format string, v ...interface{}) {
 	if _, ok := visitor.(ShowAstName); ok {
-		log.Printf(format, v...)
+		logrus.Printf(format, v...)
 	}
 }
 

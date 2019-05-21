@@ -1299,7 +1299,7 @@ func (e *InsertExec) Next(ctx context.Context, chk *chunk.Chunk) error {
 	if len(e.children) > 0 && e.children[0] != nil {
 		rows, err = e.getRowsSelectChunk(ctx, cols, e.IgnoreErr)
 	} else {
-		log.Printf("has no children")
+		log.Printf("InsertExec has no children")
 		rows, err = e.getRows(cols, e.IgnoreErr)
 	}
 	if err != nil {
@@ -1370,7 +1370,7 @@ func (e *InsertValues) getColumns(tableCols []*table.Column) ([]*table.Column, e
 	} else {
 		// If e.Columns are empty, use all columns instead.
 		cols = tableCols
-		log.Printf("use all columns")
+		log.Printf("use all columns table.Column")
 	}
 	for _, col := range cols {
 		log.Printf("column in InsertValues: %s", col.Name.L)
@@ -1607,6 +1607,7 @@ func (e *InsertValues) fillRowData(cols []*table.Column, vals []types.Datum, ign
 }
 
 func (e *InsertValues) fillGenColData(cols []*table.Column, valLen int, hasValue []bool, row types.DatumRow, ignoreErr bool) ([]types.Datum, error) {
+	log.Printf("handle generation value")
 	err := e.initDefaultValues(row, hasValue, ignoreErr)
 	if err != nil {
 		return nil, errors.Trace(err)

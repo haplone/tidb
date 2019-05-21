@@ -16,6 +16,7 @@ package executor
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strings"
 	"time"
 
@@ -139,6 +140,10 @@ type ExecStmt struct {
 	isPreparedStmt bool
 }
 
+func (es ExecStmt) String() string {
+	return fmt.Sprintf("executor/ExecStmt: Plan[%s],Text[%s],StmtNode[%s]", reflect.TypeOf(es.Plan), es.Text, reflect.TypeOf(es.StmtNode))
+}
+
 // OriginText returns original statement as a string.
 func (a *ExecStmt) OriginText() string {
 	return a.Text
@@ -180,8 +185,7 @@ func (a *ExecStmt) RebuildPlan() error {
 // like the INSERT, UPDATE statements, it executes in this function, if the Executor returns
 // result, execution is done after this function returns, in the returned ast.RecordSet Next method.
 func (a *ExecStmt) Exec(ctx context.Context) (ast.RecordSet, error) {
-	log.Printf("--------------------")
-	log.Printf("step into executor phase")
+	log.Printf("-------------------- step into executor phase")
 	log.Printf("ExecStmt: %s", a)
 	a.startTime = time.Now()
 	sctx := a.Ctx
@@ -228,6 +232,7 @@ func (a *ExecStmt) Exec(ctx context.Context) (ast.RecordSet, error) {
 	}
 	// If the executor doesn't return any result to the client, we execute it without delay.
 	if e.Schema().Len() == 0 {
+		log.Printf("InsertExec has no schema")
 		return a.handleNoDelayExecutor(ctx, sctx, e, pi)
 	} else if proj, ok := e.(*ProjectionExec); ok && proj.calculateNoDelay {
 		// Currently this is only for the "DO" statement. Take "DO 1, @a=2;" as an example:
@@ -283,7 +288,7 @@ func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
 	// code_analysis 默认点查high priority, analyze 默认low priority
 	priority := kv.PriorityNormal
 	if _, ok := a.Plan.(*plan.Execute); !ok {
-		log.Printf("insert is a plan.Execute")
+		log.Printf("ExecStmt.Plan %s", reflect.TypeOf(a.Plan))
 		// Do not sync transaction for Execute statement, because the real optimization work is done in
 		// "ExecuteExec.Build".
 		var err error
@@ -294,7 +299,7 @@ func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
 		} else {
 			log.Debugf("con:%d ActivePendingTxn %s", ctx.GetSessionVars().ConnectionID, a.Text)
 			err = ctx.ActivePendingTxn()
-			log.Printf("check insert sql is not point get")
+			log.Printf("check sql is not point get")
 		}
 		if err != nil {
 			return nil, errors.Trace(err)

@@ -333,7 +333,7 @@ type SubqueryExec interface {
 	// otherwise, we will return a table result like {{1, 1}, {2, 2}}.
 	EvalRows(ctx sessionctx.Context, rowCount int) ([]types.Datum, error)
 
-	// ColumnCount returns column count for the sub query.
+	// ColumnCount returns column Count for the sub query.
 	ColumnCount() (int, error)
 }
 

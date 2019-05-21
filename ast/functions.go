@@ -450,7 +450,7 @@ const (
 
 const (
 	// AggFuncCount is the name of Count function.
-	AggFuncCount = "count"
+	AggFuncCount = "Count"
 	// AggFuncSum is the name of Sum function.
 	AggFuncSum = "sum"
 	// AggFuncAvg is the name of Avg function.

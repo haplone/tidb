@@ -745,6 +745,7 @@ func (s *session) SetProcessInfo(sql string) {
 }
 
 func (s *session) executeStatement(ctx context.Context, connID uint64, stmtNode ast.StmtNode, stmt ast.Statement, recordSets []ast.RecordSet) ([]ast.RecordSet, error) {
+	log.Printf("cache sql info to session context")
 	s.SetValue(sessionctx.QueryString, stmt.OriginText())
 	if _, ok := stmtNode.(ast.DDLNode); ok {
 		s.SetValue(sessionctx.LastExecuteDDL, true)
@@ -839,7 +840,9 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			switch n := stmtNode.(type) {
 			case *ast.InsertStmt:
 				log.Printf("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
-				asn := ast.ShowAstName{}
+				var count int
+				count = 0
+				asn := ast.ShowAstName{Count: &count}
 				stmtNode.Accept(asn)
 			}
 			// code_analysis sql执行前，再重置下上下文
@@ -1317,7 +1320,7 @@ const loadCommonGlobalVarsSQL = "select HIGH_PRIORITY * from mysql.global_variab
 
 // loadCommonGlobalVariablesIfNeeded loads and applies commonly used global variables for the session.
 func (s *session) loadCommonGlobalVariablesIfNeeded() error {
-	log.Printf("load common global variables")
+	log.Printf("load common global variables from table  mysql.global_variables")
 	vars := s.sessionVars
 	if vars.CommonGlobalLoaded {
 		return nil

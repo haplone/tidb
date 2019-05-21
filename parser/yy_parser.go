@@ -14,6 +14,7 @@
 package parser
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 	"regexp"
 	"strconv"
@@ -86,6 +87,8 @@ func New() *Parser {
 // Parse parses a query string to raw ast.StmtNode.
 // If charset or collation is "", default charset and collation will be used.
 func (parser *Parser) Parse(sql, charset, collation string) ([]ast.StmtNode, error) {
+	logrus.Printf("----------------------- step into yacc")
+	logrus.Printf("use yacc to parse sql text to ast.StmtNode: %s", sql)
 	if charset == "" {
 		charset = mysql.DefaultCharset
 	}

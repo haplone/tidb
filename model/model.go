@@ -137,6 +137,11 @@ type TableInfo struct {
 	Partition *PartitionInfo
 }
 
+func (ti TableInfo) String() string {
+	r := fmt.Sprintf("model.TableInfo: ID[%d],Name[%s],Columns:[%s],Indices[%s]", ti.ID, ti.Name, ti.Columns, ti.Indices)
+	return r
+}
+
 // GetUpdateTime gets the table's updating time.
 func (t *TableInfo) GetUpdateTime() time.Time {
 	return tsConvert2Time(t.UpdateTS)

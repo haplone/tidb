@@ -48,6 +48,7 @@ var (
 )
 
 // Constant stands for a constant value.
+// code_analysis to_specify DeferredExpr?
 type Constant struct {
 	Value        types.Datum
 	RetType      *types.FieldType

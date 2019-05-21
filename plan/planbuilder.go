@@ -930,7 +930,8 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		Priority:    insert.Priority,
 		IgnoreErr:   insert.IgnoreErr,
 	}.init(b.ctx)
-	logrus.Printf("got logical plan : %s", reflect.TypeOf(insertPlan))
+	logrus.Printf("-----------------step into logical plan")
+	logrus.Printf("got plan (not logical plan): %s", reflect.TypeOf(insertPlan))
 
 	// code_analysis 这边的visitInfo 用于权限校验，比如用户是否有权限写这个表
 	b.visitInfo = append(b.visitInfo, visitInfo{
@@ -948,6 +949,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 	// Check insert.Columns contains generated columns or not.
 	// It's for INSERT INTO t (...) VALUES (...)
 	if len(insert.Columns) > 0 {
+		logrus.Printf("check auto generated column")
 		for _, col := range insert.Columns {
 			//logrus.Printf("=----",col.Name)
 			if column, ok := columnByName[col.Name.L]; ok {
@@ -966,10 +968,12 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 
 	checkRefColumn := func(n ast.Node) ast.Node {
 		if insertPlan.NeedFillDefaultValue {
+			logrus.Printf("plan/Insert need to fill default value")
 			return n
 		}
 		switch n.(type) {
 		case *ast.ColumnName, *ast.ColumnNameExpr:
+			logrus.Printf("plan/Insert check need to fill default value ? yes")
 			insertPlan.NeedFillDefaultValue = true
 		}
 		return n
@@ -977,6 +981,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 
 	cols := insertPlan.Table.Cols()
 	maxValuesItemLength := 0 // the max length of items in VALUES list.
+	logrus.Printf("convert ast.ExprNode -> expression.Expression")
 	for _, valuesItem := range insert.Lists {
 		// code_analysis 对应 INSERT INTO t VALUES ("pingcap001", "pingcap", 3),("pingcap002", "pingcap", 2) 后面括号里的
 		exprList := make([]expression.Expression, 0, len(valuesItem))
@@ -995,7 +1000,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 					Value:   val.Datum,
 					RetType: &val.Type,
 				}
-				logrus.Printf("%s -- %s -- %s -- %d", val.Datum, &val.Type, val.GetString(), val.GetInt64())
+				logrus.Printf("got expression.Constant: %s -- %s -- %s -- %d", val.Datum, &val.Type, val.GetString(), val.GetInt64())
 			} else {
 				expr, _, err = b.rewriteWithPreprocess(valueItem, mockTablePlan, nil, true, checkRefColumn)
 			}
@@ -1012,6 +1017,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 
 	// It's for INSERT INTO t VALUES (...)
 	if len(insert.Columns) == 0 {
+		logrus.Printf("sql does not specify columns ,we need to check them")
 		// The length of VALUES list maybe exceed table width,
 		// we ignore this here but do checking in executor.
 		var effectiveValuesLen int
@@ -1022,7 +1028,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		}
 		for i := 0; i < effectiveValuesLen; i++ {
 			col := tableInfo.Columns[i]
-			logrus.Printf("fill column by idx: %s", col.Name)
+			logrus.Printf("check column by idx: %s", col.Name)
 			if col.IsGenerated() {
 				b.err = ErrBadGeneratedColumn.GenByArgs(col.Name.O, tableInfo.Name.O)
 				return nil

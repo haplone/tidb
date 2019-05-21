@@ -522,7 +522,7 @@ func (b *executorBuilder) buildInsert(v *plan.Insert) Executor {
 		SelectExec:            selectExec,
 	}
 
-	logrus.Printf("new InsertValues")
+	logrus.Printf("new executor/InsertValues")
 
 	ivs.Table = v.Table
 	if v.IsReplace {
@@ -534,7 +534,7 @@ func (b *executorBuilder) buildInsert(v *plan.Insert) Executor {
 		Priority:     v.Priority,
 		IgnoreErr:    v.IgnoreErr,
 	}
-	logrus.Printf("new InsertExec")
+	logrus.Printf("new executor/InsertExec")
 	return insert
 }
 

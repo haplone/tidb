@@ -33,7 +33,7 @@ import (
 
 // Preprocess resolves table names of the node, and checks some statements validation.
 func Preprocess(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema, inPrepare bool) error {
-	logrus.Printf("use visit to resolve tbl name and do some check: %d", node.Text())
+	logrus.Printf("use visit to resolve tbl name and do some check: %s", node.Text())
 	v := preprocessor{is: is, ctx: ctx, inPrepare: inPrepare}
 	node.Accept(&v)
 	return errors.Trace(v.err)
