@@ -15,6 +15,7 @@ package domain
 
 import (
 	"crypto/tls"
+	"fmt"
 	"os"
 	"sync"
 	"sync/atomic"
@@ -60,6 +61,10 @@ type Domain struct {
 	wg              sync.WaitGroup
 
 	MockReloadFailed MockFailure // It mocks reload failed.
+}
+
+func (d Domain) String() string {
+	return fmt.Sprintf("Domain store[%s]", d.store)
 }
 
 // loadInfoSchema loads infoschema at startTS into handle, usedSchemaVersion is the currently used
