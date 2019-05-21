@@ -1143,6 +1143,7 @@ func CreateSession(store kv.Storage) (Session, error) {
 
 // BootstrapSession runs the first time when the TiDB server start.
 func BootstrapSession(store kv.Storage) (*domain.Domain, error) {
+	log.Printf("bootstrap session with store[%s]", store)
 	ver := getStoreBootstrapVersion(store)
 	if ver == notBootstrapped {
 		runInBootstrapSession(store, bootstrap)

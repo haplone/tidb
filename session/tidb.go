@@ -48,6 +48,7 @@ type domainMap struct {
 }
 
 func (dm *domainMap) Get(store kv.Storage) (d *domain.Domain, err error) {
+	log.Infof("get domain.Domain from map with store[%s]", store)
 	key := store.UUID()
 	dm.mu.Lock()
 	defer dm.mu.Unlock()

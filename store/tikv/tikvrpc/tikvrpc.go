@@ -461,6 +461,7 @@ func (resp *CopStreamResponse) Close() {
 
 // CheckStreamTimeoutLoop runs periodically to check is there any stream request timeouted.
 // Lease is an object to track stream requests, call this function with "go CheckStreamTimeoutLoop()"
+// code_analysis to_specify
 func CheckStreamTimeoutLoop(ch <-chan *Lease) {
 	ticker := time.NewTicker(200 * time.Millisecond)
 	defer ticker.Stop()

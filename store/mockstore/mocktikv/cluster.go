@@ -15,6 +15,8 @@ package mocktikv
 
 import (
 	"bytes"
+	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"sync"
 
@@ -45,6 +47,7 @@ type Cluster struct {
 // NewCluster creates an empty cluster. It needs to be bootstrapped before
 // providing service.
 func NewCluster() *Cluster {
+	logrus.Printf("new Cluster in mock")
 	return &Cluster{
 		stores:  make(map[uint64]*Store),
 		regions: make(map[uint64]*Region),
@@ -69,6 +72,7 @@ func (c *Cluster) AllocIDs(n int) []uint64 {
 	for len(ids) < n {
 		ids = append(ids, c.allocID())
 	}
+	logrus.Printf("alloc %d ids by once %s", n, ids)
 	return ids
 }
 
@@ -429,6 +433,7 @@ func newPeerMeta(peerID, storeID uint64) *metapb.Peer {
 }
 
 func newRegion(regionID uint64, storeIDs, peerIDs []uint64, leaderPeerID uint64) *Region {
+	logrus.Printf("new Region Id[%d],StoreIds[%s],PeerIds[%s],leaderPeerId[%d]", regionID, storeIDs, peerIDs, leaderPeerID)
 	if len(storeIDs) != len(peerIDs) {
 		panic("len(storeIDs) != len(peerIds)")
 	}
@@ -523,10 +528,15 @@ type Store struct {
 }
 
 func newStore(storeID uint64, addr string) *Store {
+	logrus.Printf("new Store[%d] [%s] in mock", storeID, addr)
 	return &Store{
 		meta: &metapb.Store{
 			Id:      storeID,
 			Address: addr,
 		},
 	}
+}
+
+func (s Store) String() string {
+	return fmt.Sprintf("store/mockstore/mocktikv.Store Id[%d],Address[%s]", s.meta.Id, s.meta.Address)
 }

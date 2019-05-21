@@ -13,10 +13,14 @@
 
 package mocktikv
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/sirupsen/logrus"
+)
 
 // BootstrapWithSingleStore initializes a Cluster with 1 Region and 1 Store.
 func BootstrapWithSingleStore(cluster *Cluster) (storeID, peerID, regionID uint64) {
+	logrus.Printf("bootstrap cluster in mock")
 	ids := cluster.AllocIDs(3)
 	storeID, peerID, regionID = ids[0], ids[1], ids[2]
 	cluster.AddStore(storeID, fmt.Sprintf("store%d", storeID))

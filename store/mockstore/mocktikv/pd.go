@@ -14,6 +14,7 @@
 package mocktikv
 
 import (
+	"github.com/sirupsen/logrus"
 	"sync"
 	"time"
 
@@ -36,6 +37,7 @@ type pdClient struct {
 // NewPDClient creates a mock pd.Client that uses local timestamp and meta data
 // from a Cluster.
 func NewPDClient(cluster *Cluster) pd.Client {
+	logrus.Printf("new PDClient with cluster[%s]", cluster)
 	return &pdClient{
 		cluster: cluster,
 	}

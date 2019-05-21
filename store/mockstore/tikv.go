@@ -14,6 +14,7 @@
 package mockstore
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/url"
 	"strings"
 
@@ -83,6 +84,7 @@ func WithPath(path string) MockTiKVStoreOption {
 // NewMockTikvStore creates a mocked tikv store, the path is the file path to store the data.
 // If path is an empty string, a memory storage will be created.
 func NewMockTikvStore(options ...MockTiKVStoreOption) (kv.Storage, error) {
+	logrus.Printf("new mock tikv storage")
 	var opt mockOptions
 	for _, f := range options {
 		f(&opt)
