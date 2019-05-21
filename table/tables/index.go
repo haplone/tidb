@@ -197,7 +197,7 @@ func (c *index) GenIndexKey(sc *stmtctx.StatementContext, indexedValues []types.
 // Create will return the existing entry's handle as the first return value, ErrKeyExists as the second return value.
 // code_analysis to_specify should specify by unit test
 func (c *index) Create(ctx sessionctx.Context, rm kv.RetrieverMutator, indexedValues []types.Datum, h int64) (int64, error) {
-	logrus.Printf("create index row, and save to buffer for: %d ,row values: %s", h, indexedValues)
+	logrus.Infof("create index row, and save to buffer for: %d ,row values: %s", h, indexedValues)
 	writeBufs := ctx.GetSessionVars().GetWriteStmtBufs()
 	skipCheck := ctx.GetSessionVars().ImportingData || ctx.GetSessionVars().StmtCtx.BatchCheck
 	key, distinct, err := c.GenIndexKey(ctx.GetSessionVars().StmtCtx, indexedValues, h, writeBufs.IndexKeyBuf)

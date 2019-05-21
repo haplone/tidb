@@ -198,7 +198,7 @@ func (tc *TiDBContext) WarningCount() uint16 {
 
 // Execute implements QueryCtx Execute method.
 func (tc *TiDBContext) Execute(ctx context.Context, sql string) (rs []ResultSet, err error) {
-	logrus.Printf("handle sql to Session[session]: %s", sql)
+	logrus.Infof("handle sql to Session[session]: %s", sql)
 	rsList, err := tc.session.Execute(ctx, sql)
 	if err != nil {
 		return

@@ -737,15 +737,15 @@ func (s *session) SetProcessInfo(sql string) {
 		pi.Host = s.sessionVars.User.Hostname
 	}
 	if strings.EqualFold("", sql) {
-		log.Printf("empty processinfo")
+		log.Infof("empty processinfo")
 	} else {
-		log.Printf("set processinfo : %s", pi)
+		log.Infof("set processinfo : %s", pi)
 	}
 	s.processInfo.Store(pi)
 }
 
 func (s *session) executeStatement(ctx context.Context, connID uint64, stmtNode ast.StmtNode, stmt ast.Statement, recordSets []ast.RecordSet) ([]ast.RecordSet, error) {
-	log.Printf("cache sql info to session context")
+	log.Infof("cache sql info to session context")
 	s.SetValue(sessionctx.QueryString, stmt.OriginText())
 	if _, ok := stmtNode.(ast.DDLNode); ok {
 		s.SetValue(sessionctx.LastExecuteDDL, true)
@@ -772,7 +772,7 @@ func (s *session) executeStatement(ctx context.Context, connID uint64, stmtNode 
 // code_analysis 真正开工
 func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.RecordSet, err error) {
 	log.Println("==================")
-	log.Printf("execute sql starts here: %s", sql)
+	log.Infof("execute sql starts here: %s", sql)
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		span, ctx = opentracing.StartSpanFromContext(ctx, "session.Execute")
 		defer span.Finish()
@@ -839,7 +839,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 		for _, stmtNode := range stmtNodes {
 			switch n := stmtNode.(type) {
 			case *ast.InsertStmt:
-				log.Printf("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
+				log.Infof("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
 				var count int
 				count = 0
 				asn := ast.ShowAstName{Count: &count}
@@ -855,7 +855,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			executor.ResetStmtCtx(s, stmtNode)
 			// code_analysis 将ast通过 logical plan, physical plan 最终转为executor,plan 的优化等核心都在这里
 			stmt, err := compiler.Compile(ctx, stmtNode)
-			log.Printf("got ExecStmt: %s", reflect.TypeOf(stmt))
+			log.Infof("got ExecStmt: %s", reflect.TypeOf(stmt))
 			if err != nil {
 				s.rollbackOnError(ctx)
 				log.Warnf("con:%d compile error:\n%v\n%s", connID, err, sql)
@@ -867,7 +867,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.Rec
 			if planCacheEnabled && stmt.Cacheable && len(stmtNodes) == 1 && !s.GetSessionVars().StmtCtx.HistogramsNotLoad() {
 				plan.GlobalPlanCache.Put(cacheKey, plan.NewSQLCacheValue(stmtNode, stmt.Plan, stmt.Expensive))
 			} else {
-				log.Printf("insert sql will not cache ,it's for TP select")
+				log.Infof("insert sql will not cache ,it's for TP select")
 			}
 
 			// Step4: Execute the physical plan.
@@ -1143,7 +1143,7 @@ func CreateSession(store kv.Storage) (Session, error) {
 
 // BootstrapSession runs the first time when the TiDB server start.
 func BootstrapSession(store kv.Storage) (*domain.Domain, error) {
-	log.Printf("bootstrap session with store[%s]", store)
+	log.Infof("bootstrap session with store[%s]", store)
 	ver := getStoreBootstrapVersion(store)
 	if ver == notBootstrapped {
 		runInBootstrapSession(store, bootstrap)
@@ -1321,7 +1321,7 @@ const loadCommonGlobalVarsSQL = "select HIGH_PRIORITY * from mysql.global_variab
 
 // loadCommonGlobalVariablesIfNeeded loads and applies commonly used global variables for the session.
 func (s *session) loadCommonGlobalVariablesIfNeeded() error {
-	log.Printf("load common global variables from table  mysql.global_variables")
+	log.Infof("load common global variables from table  mysql.global_variables")
 	vars := s.sessionVars
 	if vars.CommonGlobalLoaded {
 		return nil
@@ -1342,7 +1342,7 @@ func (s *session) loadCommonGlobalVariablesIfNeeded() error {
 		varName := row.GetString(0)
 		varVal := row.GetDatum(1, &fields[1].Column.FieldType)
 		if _, ok := vars.GetSystemVar(varName); !ok {
-			log.Printf("load variable__ %s: %s", varName, varVal.GetRaw())
+			log.Infof("load variable__ %s: %s", varName, varVal.GetRaw())
 			err = variable.SetSessionSystemVar(s.sessionVars, varName, varVal)
 			if err != nil {
 				return errors.Trace(err)
@@ -1368,7 +1368,7 @@ func (s *session) PrepareTxnCtx(ctx context.Context) {
 		SchemaVersion: is.SchemaMetaVersion(),
 		CreateTime:    time.Now(),
 	}
-	log.Printf("reset session var TransactionContext")
+	log.Infof("reset session var TransactionContext")
 	if !s.sessionVars.IsAutocommit() {
 		s.sessionVars.SetStatusFlag(mysql.ServerStatusInTrans, true)
 	}

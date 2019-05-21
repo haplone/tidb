@@ -106,7 +106,7 @@ func MustNewMVCCStore() MVCCStore {
 
 // NewMVCCLevelDB returns a new MVCCLevelDB object.
 func NewMVCCLevelDB(path string) (*MVCCLevelDB, error) {
-	log.Printf("new MVCCStore[%s] with leveldb", path)
+	log.Infof("new MVCCStore[%s] with leveldb", path)
 	var (
 		d   *leveldb.DB
 		err error

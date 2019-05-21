@@ -160,7 +160,7 @@ func (a ShowAstName) Enter(n Node) (node Node, skipChildren bool) {
 	for i := 0; i < *a.Count; i++ {
 		blank = append(blank, []byte(" - ")...)
 	}
-	logrus.Printf("init ast enter: %s%s", blank, reflect.TypeOf(n))
+	logrus.Infof("init ast enter: %s%s", blank, reflect.TypeOf(n))
 	*a.Count = *a.Count + 1
 	return n, false
 }
@@ -171,13 +171,13 @@ func (a ShowAstName) Leave(n Node) (node Node, ok bool) {
 	for i := 0; i < *a.Count; i++ {
 		blank = append(blank, []byte(" - ")...)
 	}
-	logrus.Printf("init ast leave: %s%s", blank, reflect.TypeOf(n))
+	logrus.Infof("init ast leave: %s%s", blank, reflect.TypeOf(n))
 	return n, true
 }
 
 func L(visitor Visitor, format string, v ...interface{}) {
 	if _, ok := visitor.(ShowAstName); ok {
-		logrus.Printf(format, v...)
+		logrus.Infof(format, v...)
 	}
 }
 

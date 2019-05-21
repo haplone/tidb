@@ -149,7 +149,7 @@ func (b *planBuilder) build(node ast.Node) Plan {
 	case *ast.ExplainStmt:
 		return b.buildExplain(x)
 	case *ast.InsertStmt:
-		logrus.Printf("build insert goes here : %s", node.Text())
+		logrus.Infof("build insert goes here : %s", node.Text())
 		return b.buildInsert(x)
 	case *ast.LoadDataStmt:
 		return b.buildLoadData(x)
@@ -865,7 +865,7 @@ func (b *planBuilder) resolveGeneratedColumns(columns []*table.Column, onDups ma
 		if !column.IsGenerated() {
 			continue
 		}
-		logrus.Printf("generate value for %s", column.Name)
+		logrus.Infof("generate value for %s", column.Name)
 		columnName := &ast.ColumnName{Name: column.Name}
 		columnName.SetText(column.Name.O)
 
@@ -899,7 +899,7 @@ func (b *planBuilder) resolveGeneratedColumns(columns []*table.Column, onDups ma
 }
 
 func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
-	logrus.Printf("build insert in planBuilder")
+	logrus.Infof("build insert in planBuilder")
 	ts, ok := insert.Table.TableRefs.Left.(*ast.TableSource)
 	if !ok {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()
@@ -910,17 +910,17 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()
 		return nil
 	}
-	//logrus.Printf("specify tbl to %s.%s", tn.Schema.L, tn.Name.L)
+	//logrus.Infof("specify tbl to %s.%s", tn.Schema.L, tn.Name.L)
 	tableInfo := tn.TableInfo
 	// Build Schema with DBName otherwise ColumnRef with DBName cannot match any Column in Schema.
 	schema := expression.TableInfo2SchemaWithDBName(tn.Schema, tableInfo)
-	logrus.Printf("got schema for expression: %s", schema)
+	logrus.Infof("got schema for expression: %s", schema)
 	tableInPlan, ok := b.is.TableByID(tableInfo.ID)
 	if !ok {
 		b.err = errors.Errorf("Can't get table %s.", tableInfo.Name.O)
 		return nil
 	}
-	logrus.Printf("got table.Table %s", tableInPlan.Meta())
+	logrus.Infof("got table.Table %s", tableInPlan.Meta())
 
 	insertPlan := Insert{
 		Table:       tableInPlan,
@@ -930,8 +930,8 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		Priority:    insert.Priority,
 		IgnoreErr:   insert.IgnoreErr,
 	}.init(b.ctx)
-	logrus.Printf("-----------------step into logical plan")
-	logrus.Printf("got plan (not logical plan): %s", reflect.TypeOf(insertPlan))
+	logrus.Infof("-----------------step into logical plan")
+	logrus.Infof("got plan (not logical plan): %s", reflect.TypeOf(insertPlan))
 
 	// code_analysis 这边的visitInfo 用于权限校验，比如用户是否有权限写这个表
 	b.visitInfo = append(b.visitInfo, visitInfo{
@@ -939,7 +939,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		db:        tn.DBInfo.Name.L,
 		table:     tableInfo.Name.L,
 	})
-	logrus.Printf("use visit info to check privilege: %s", b.visitInfo)
+	logrus.Infof("use visit info to check privilege: %s", b.visitInfo)
 
 	columnByName := make(map[string]*table.Column, len(insertPlan.Table.Cols()))
 	for _, col := range insertPlan.Table.Cols() {
@@ -949,11 +949,11 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 	// Check insert.Columns contains generated columns or not.
 	// It's for INSERT INTO t (...) VALUES (...)
 	if len(insert.Columns) > 0 {
-		logrus.Printf("check auto generated column")
+		logrus.Infof("check auto generated column")
 		for _, col := range insert.Columns {
-			//logrus.Printf("=----",col.Name)
+			//logrus.Infof("=----",col.Name)
 			if column, ok := columnByName[col.Name.L]; ok {
-				//logrus.Printf("value column: %s",column.ColumnInfo)
+				//logrus.Infof("value column: %s",column.ColumnInfo)
 				// code_analysis 自动生成的列不能手动设置值
 				if column.IsGenerated() {
 					b.err = ErrBadGeneratedColumn.GenByArgs(col.Name.O, tableInfo.Name.O)
@@ -968,12 +968,12 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 
 	checkRefColumn := func(n ast.Node) ast.Node {
 		if insertPlan.NeedFillDefaultValue {
-			logrus.Printf("plan/Insert need to fill default value")
+			logrus.Infof("plan/Insert need to fill default value")
 			return n
 		}
 		switch n.(type) {
 		case *ast.ColumnName, *ast.ColumnNameExpr:
-			logrus.Printf("plan/Insert check need to fill default value ? yes")
+			logrus.Infof("plan/Insert check need to fill default value ? yes")
 			insertPlan.NeedFillDefaultValue = true
 		}
 		return n
@@ -981,12 +981,12 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 
 	cols := insertPlan.Table.Cols()
 	maxValuesItemLength := 0 // the max length of items in VALUES list.
-	logrus.Printf("convert ast.ExprNode -> expression.Expression")
+	logrus.Infof("convert ast.ExprNode -> expression.Expression")
 	for _, valuesItem := range insert.Lists {
 		// code_analysis 对应 INSERT INTO t VALUES ("pingcap001", "pingcap", 3),("pingcap002", "pingcap", 2) 后面括号里的
 		exprList := make([]expression.Expression, 0, len(valuesItem))
 		for i, valueItem := range valuesItem {
-			logrus.Printf("value for insert: %s", reflect.TypeOf(valueItem))
+			logrus.Infof("value for insert: %s", reflect.TypeOf(valueItem))
 			var expr expression.Expression
 			var err error
 			if dft, ok := valueItem.(*ast.DefaultExpr); ok {
@@ -1000,7 +1000,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 					Value:   val.Datum,
 					RetType: &val.Type,
 				}
-				logrus.Printf("got expression.Constant: %s -- %s -- %s -- %d", val.Datum, &val.Type, val.GetString(), val.GetInt64())
+				logrus.Infof("got expression.Constant: %s -- %s -- %s -- %d", val.Datum, &val.Type, val.GetString(), val.GetInt64())
 			} else {
 				expr, _, err = b.rewriteWithPreprocess(valueItem, mockTablePlan, nil, true, checkRefColumn)
 			}
@@ -1017,7 +1017,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 
 	// It's for INSERT INTO t VALUES (...)
 	if len(insert.Columns) == 0 {
-		logrus.Printf("sql does not specify columns ,we need to check them")
+		logrus.Infof("sql does not specify columns ,we need to check them")
 		// The length of VALUES list maybe exceed table width,
 		// we ignore this here but do checking in executor.
 		var effectiveValuesLen int
@@ -1028,7 +1028,7 @@ func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
 		}
 		for i := 0; i < effectiveValuesLen; i++ {
 			col := tableInfo.Columns[i]
-			logrus.Printf("check column by idx: %s", col.Name)
+			logrus.Infof("check column by idx: %s", col.Name)
 			if col.IsGenerated() {
 				b.err = ErrBadGeneratedColumn.GenByArgs(col.Name.O, tableInfo.Name.O)
 				return nil

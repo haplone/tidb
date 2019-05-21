@@ -117,7 +117,7 @@ type dirtyTableOperation struct {
 
 // Commit overrides the Transaction interface.
 func (st *TxnState) Commit(ctx context.Context) error {
-	log.Printf("TxnState Commit")
+	log.Infof("TxnState Commit")
 	if st.fail != nil {
 		// If any error happen during StmtCommit, don't commit this transaction.
 		err := st.fail
@@ -142,7 +142,7 @@ func (st *TxnState) Get(k kv.Key) ([]byte, error) {
 	if kv.IsErrNotFound(err) {
 		val, err = st.Transaction.Get(k)
 	}
-	log.Printf("TxnState Get value by key[%s] in %s : %s", k, reflect.TypeOf(st.buf), val)
+	log.Infof("TxnState Get value by key[%s] in %s : %s", k, reflect.TypeOf(st.buf), val)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -257,7 +257,7 @@ func (s *session) getTxnFuture(ctx context.Context) *txnFuture {
 
 // StmtCommit implements the sessionctx.Context interface.
 func (s *session) StmtCommit() {
-	log.Printf("commit stmt")
+	log.Infof("commit stmt")
 	if s.txn.fail != nil {
 		return
 	}
@@ -269,7 +269,7 @@ func (s *session) StmtCommit() {
 		// if mockStmtCommitError {
 		// 	return errors.New("mock stmt commit error")
 		// }
-		log.Printf("walk mem buffer to check value is empty: key[%s]: value[%s]", k, v)
+		log.Infof("walk mem buffer to check value is empty: key[%s]: value[%s]", k, v)
 		if len(v) == 0 {
 			return errors.Trace(st.Transaction.Delete(k))
 		}
@@ -292,7 +292,7 @@ func (s *session) StmtCommit() {
 			mergeToDirtyDB(dirtyDB, op)
 		}
 
-		log.Printf("dirty db in txn: %s", dirtyDB)
+		log.Infof("dirty db in txn: %s", dirtyDB)
 	}
 }
 

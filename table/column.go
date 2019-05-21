@@ -180,7 +180,7 @@ func CastValue(ctx sessionctx.Context, val types.Datum, col *model.ColumnInfo) (
 		}
 	}
 
-	log.Printf("cast value, before: %s  --- after: %s", val, casted)
+	log.Infof("cast value, before: %s  --- after: %s", val, casted)
 	return casted, errors.Trace(err)
 }
 

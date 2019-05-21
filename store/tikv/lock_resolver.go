@@ -44,7 +44,7 @@ type LockResolver struct {
 }
 
 func newLockResolver(store Storage) *LockResolver {
-	log.Printf("new sore/tikv/lock_resolver.LockResolver with store[%s]", store)
+	log.Infof("new sore/tikv/lock_resolver.LockResolver with store[%s]", store)
 	r := &LockResolver{
 		store: store,
 	}

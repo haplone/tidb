@@ -856,7 +856,7 @@ func (e *InsertExec) insertOneRow(row []types.Datum) (int64, error) {
 func (e *InsertExec) exec(ctx context.Context, rows [][]types.Datum) (types.DatumRow, error) {
 	// If tidb_batch_insert is ON and not in a transaction, we could use BatchInsert mode.
 	sessVars := e.ctx.GetSessionVars()
-	log.Printf("get session variables: %s", sessVars)
+	log.Infof("get session variables: %s", sessVars)
 	defer sessVars.CleanBuffers()
 
 	e.rowCount = 0
@@ -1080,7 +1080,7 @@ func (e *InsertExec) checkBatchLimit() error {
 	sessVars := e.ctx.GetSessionVars()
 	batchInsert := sessVars.BatchInsert && !sessVars.InTxn()
 	batchSize := sessVars.DMLBatchSize
-	log.Printf("batch insert rows check happens here: batch[%v], rowCount[%d], batchSize[%d]", batchInsert, e.rowCount, batchSize)
+	log.Infof("batch insert rows check happens here: batch[%v], rowCount[%d], batchSize[%d]", batchInsert, e.rowCount, batchSize)
 	if batchInsert && e.rowCount >= batchSize {
 		e.ctx.StmtCommit()
 		if err := e.ctx.NewTxn(); err != nil {
@@ -1284,8 +1284,8 @@ func batchMarkDupRows(ctx sessionctx.Context, t table.Table, rows [][]types.Datu
 
 // Next implements Exec Next interface.
 func (e *InsertExec) Next(ctx context.Context, chk *chunk.Chunk) error {
-	log.Printf("under volcano , next for InsertExec")
-	log.Printf("use chunk to save memory")
+	log.Infof("under volcano , next for InsertExec")
+	log.Infof("use chunk to save memory")
 	chk.Reset()
 	if e.finished {
 		return nil
@@ -1299,7 +1299,7 @@ func (e *InsertExec) Next(ctx context.Context, chk *chunk.Chunk) error {
 	if len(e.children) > 0 && e.children[0] != nil {
 		rows, err = e.getRowsSelectChunk(ctx, cols, e.IgnoreErr)
 	} else {
-		log.Printf("InsertExec has no children")
+		log.Infof("InsertExec has no children")
 		rows, err = e.getRows(cols, e.IgnoreErr)
 	}
 	if err != nil {
@@ -1321,7 +1321,7 @@ func (e *InsertExec) Close() error {
 
 // Open implements the Executor Close interface.
 func (e *InsertExec) Open(ctx context.Context) error {
-	log.Printf("open InsertExec for %s", e.Table.Meta().Name.L)
+	log.Infof("open InsertExec for %s", e.Table.Meta().Name.L)
 	if e.SelectExec != nil {
 		return e.SelectExec.Open(ctx)
 	}
@@ -1370,10 +1370,10 @@ func (e *InsertValues) getColumns(tableCols []*table.Column) ([]*table.Column, e
 	} else {
 		// If e.Columns are empty, use all columns instead.
 		cols = tableCols
-		log.Printf("use all columns table.Column")
+		log.Infof("use all columns table.Column")
 	}
 	for _, col := range cols {
-		log.Printf("column in InsertValues: %s", col.Name.L)
+		log.Infof("column in InsertValues: %s", col.Name.L)
 		if col.Name.L == model.ExtraHandleName.L {
 			e.hasExtraHandle = true
 			break
@@ -1453,7 +1453,7 @@ func (e *InsertValues) getRows(cols []*table.Column, ignoreErr bool) (rows [][]t
 		return nil, errors.Trace(err)
 	}
 
-	log.Printf("len of Lists(row) : %d", len(e.Lists))
+	log.Infof("len of Lists(row) : %d", len(e.Lists))
 	rows = make([][]types.Datum, len(e.Lists))
 	length := len(e.Lists[0])
 	for i, list := range e.Lists {
@@ -1507,11 +1507,11 @@ func (e *InsertValues) getRow(cols []*table.Column, list []expression.Expression
 			return nil, errors.Trace(err)
 		}
 	} else {
-		log.Printf("has not default value")
+		log.Infof("has not default value")
 	}
 
 	for i, expr := range list {
-		log.Printf("expr type: %s", reflect.TypeOf(expr))
+		log.Infof("expr type: %s", reflect.TypeOf(expr))
 		val, err := expr.Eval(row)
 		if err = e.handleErr(cols[i], rowIdx, err, ignoreErr); err != nil {
 			return nil, errors.Trace(err)
@@ -1607,7 +1607,7 @@ func (e *InsertValues) fillRowData(cols []*table.Column, vals []types.Datum, ign
 }
 
 func (e *InsertValues) fillGenColData(cols []*table.Column, valLen int, hasValue []bool, row types.DatumRow, ignoreErr bool) ([]types.Datum, error) {
-	log.Printf("handle generation value")
+	log.Infof("handle generation value")
 	err := e.initDefaultValues(row, hasValue, ignoreErr)
 	if err != nil {
 		return nil, errors.Trace(err)

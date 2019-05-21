@@ -21,7 +21,7 @@ import (
 
 // NewTestClient creates a TiKV client and PD client from options.
 func NewTestClient(cluster *Cluster, mvccStore MVCCStore, path string) (*RPCClient, pd.Client, error) {
-	logrus.Printf("new mock Client")
+	logrus.Infof("new mock Client")
 	if cluster == nil {
 		cluster = NewCluster()
 		BootstrapWithSingleStore(cluster)

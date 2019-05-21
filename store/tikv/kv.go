@@ -166,7 +166,7 @@ func (s *tikvStore) CheckVisibility(startTime uint64) error {
 }
 
 func newTikvStore(uuid string, pdClient pd.Client, spkv SafePointKV, client Client, enableGC bool) (*tikvStore, error) {
-	log.Printf("new sore/tikv/kv.tikvStore with id[%s], pdClient[%s], spkv[%s], client[%s],enableGc[%v]", uuid, pdClient, spkv, client, enableGC)
+	log.Infof("new sore/tikv/kv.tikvStore with id[%s], pdClient[%s], spkv[%s], client[%s],enableGc[%v]", uuid, pdClient, spkv, client, enableGC)
 	o, err := oracles.NewPdOracle(pdClient, time.Duration(oracleUpdateInterval)*time.Millisecond)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -216,7 +216,7 @@ func (s *tikvStore) StartGCWorker() error {
 
 // code_analysis to_specify
 func (s *tikvStore) runSafePointChecker() {
-	log.Printf("tikvStore runSafePointChecker with every %s ", gcSafePointUpdateInterval)
+	log.Infof("tikvStore runSafePointChecker with every %s ", gcSafePointUpdateInterval)
 	d := gcSafePointUpdateInterval
 	for {
 		select {

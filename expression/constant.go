@@ -111,7 +111,7 @@ func (c *Constant) Eval(_ types.Row) (types.Datum, error) {
 			c.Value.SetValue(val.GetValue())
 		}
 	}
-	log.Printf("not defer, just return value: %s", c.Value)
+	log.Infof("not defer, just return value: %s", c.Value)
 	return c.Value, nil
 }
 

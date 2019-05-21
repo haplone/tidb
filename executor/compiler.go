@@ -43,7 +43,7 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 
 	// code_analysis 获取所有db、table的元数据句柄
 	infoSchema := GetInfoSchema(c.Ctx)
-	log.Printf("get infoschema: %s", strings.Join(infoSchema.AllSchemaNames(), ","))
+	log.Infof("get infoschema: %s", strings.Join(infoSchema.AllSchemaNames(), ","))
 	if err := plan.Preprocess(c.Ctx, stmtNode, infoSchema, false); err != nil {
 		return nil, errors.Trace(err)
 	}
@@ -70,7 +70,7 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 }
 
 func logExpensiveQuery(stmtNode ast.StmtNode, finalPlan plan.Plan) (expensive bool) {
-	log.Printf("log expensive sql, need to specify what is expensive")
+	log.Infof("log expensive sql, need to specify what is expensive")
 	expensive = isExpensiveQuery(finalPlan)
 	if !expensive {
 		return

@@ -23,15 +23,15 @@ import (
 
 // NewTestTiKVStore creates a test store with Option
 func NewTestTiKVStore(client Client, pdClient pd.Client, clientHijack func(Client) Client, pdClientHijack func(pd.Client) pd.Client) (kv.Storage, error) {
-	logrus.Printf("new mock tikv store ")
+	logrus.Infof("new mock tikv store ")
 	if clientHijack != nil {
-		logrus.Printf("client hijack %s", clientHijack)
+		logrus.Infof("client hijack %s", clientHijack)
 		client = clientHijack(client)
 	}
 
 	pdCli := pd.Client(&codecPDClient{pdClient})
 	if pdClientHijack != nil {
-		logrus.Printf("pd client hijack %s", pdClientHijack)
+		logrus.Infof("pd client hijack %s", pdClientHijack)
 		pdCli = pdClientHijack(pdCli)
 	}
 

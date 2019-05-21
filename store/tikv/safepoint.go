@@ -52,7 +52,7 @@ type MockSafePointKV struct {
 
 // NewMockSafePointKV creates an instance of MockSafePointKV
 func NewMockSafePointKV() *MockSafePointKV {
-	log.Printf("new MockSafePointKv")
+	log.Infof("new MockSafePointKv")
 	return &MockSafePointKV{
 		store: make(map[string]string),
 	}

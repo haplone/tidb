@@ -116,7 +116,7 @@ func (tc *TransactionContext) UpdateDeltaForTable(tableID int64, delta int64, co
 	for key, val := range colSize {
 		item.ColSize[key] += val
 	}
-	logrus.Printf("TransactionContext update delta for table[%d]: %s", tableID, item)
+	logrus.Infof("TransactionContext update delta for table[%d]: %s", tableID, item)
 	tc.TableDeltaMap[tableID] = item
 }
 
@@ -144,7 +144,7 @@ type WriteStmtBufs struct {
 }
 
 func (ib *WriteStmtBufs) clean() {
-	logrus.Printf("sessionctx.variable.WriteStmtBufs clean")
+	logrus.Infof("sessionctx.variable.WriteStmtBufs clean")
 	ib.BufStore = nil
 	ib.RowValBuf = nil
 	ib.AddRowValues = nil

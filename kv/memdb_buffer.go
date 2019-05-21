@@ -44,7 +44,7 @@ type memDbIter struct {
 
 // NewMemDbBuffer creates a new memDbBuffer.
 func NewMemDbBuffer(cap int) MemBuffer {
-	logrus.Printf("new MemDbBuffer with leveldb")
+	logrus.Infof("new MemDbBuffer with leveldb")
 	return &memDbBuffer{
 		db:              memdb.New(comparer.DefaultComparer, cap),
 		entrySizeLimit:  TxnEntrySizeLimit,
@@ -55,7 +55,7 @@ func NewMemDbBuffer(cap int) MemBuffer {
 
 // Seek creates an Iterator.
 func (m *memDbBuffer) Seek(k Key) (Iterator, error) {
-	logrus.Printf("seek in memDbBuffer by leveldb NewIterator")
+	logrus.Infof("seek in memDbBuffer by leveldb NewIterator")
 	var i Iterator
 	if k == nil {
 		i = &memDbIter{iter: m.db.NewIterator(&util.Range{}), reverse: false}
@@ -96,7 +96,7 @@ func (m *memDbBuffer) Get(k Key) ([]byte, error) {
 // Set associates key with value.
 // code_analysis for_trigger
 func (m *memDbBuffer) Set(k Key, v []byte) error {
-	logrus.Printf("buffer kv in memDbBuffer: key[%s],value[%s]", k, v)
+	logrus.Infof("buffer kv in memDbBuffer: key[%s],value[%s]", k, v)
 	if len(v) == 0 {
 		return errors.Trace(ErrCannotSetNilValue)
 	}
@@ -167,7 +167,7 @@ func (i *memDbIter) Close() {
 
 // WalkMemBuffer iterates all buffered kv pairs in memBuf
 func WalkMemBuffer(memBuf MemBuffer, f func(k Key, v []byte) error) error {
-	logrus.Printf("WalkMemBuffer %s", reflect.TypeOf(memBuf))
+	logrus.Infof("WalkMemBuffer %s", reflect.TypeOf(memBuf))
 	iter, err := memBuf.Seek(nil)
 	if err != nil {
 		return errors.Trace(err)

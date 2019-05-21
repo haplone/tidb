@@ -33,7 +33,7 @@ import (
 
 // Preprocess resolves table names of the node, and checks some statements validation.
 func Preprocess(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema, inPrepare bool) error {
-	logrus.Printf("use visit to resolve tbl name and do some check: %s", node.Text())
+	logrus.Infof("use visit to resolve tbl name and do some check: %s", node.Text())
 	v := preprocessor{is: is, ctx: ctx, inPrepare: inPrepare}
 	node.Accept(&v)
 	return errors.Trace(v.err)
@@ -77,7 +77,7 @@ func (p *preprocessor) Enter(in ast.Node) (out ast.Node, skipChildren bool) {
 	case *ast.DeleteTableList:
 		return in, true
 	}
-	logrus.Printf(" preprocessor.Enter: %s", reflect.TypeOf(in))
+	logrus.Infof(" preprocessor.Enter: %s", reflect.TypeOf(in))
 	return in, p.err != nil
 }
 
@@ -108,12 +108,12 @@ func (p *preprocessor) Leave(in ast.Node) (out ast.Node, ok bool) {
 			p.err = ErrUnknownExplainFormat.GenByArgs(x.Format)
 		}
 	case *ast.TableName:
-		logrus.Printf("before resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
+		logrus.Infof("before resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
 		p.handleTableName(x)
-		logrus.Printf("after resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
+		logrus.Infof("after resolve tbl name %s -- %s", x.Name.L, x.TableInfo)
 	}
 
-	logrus.Printf(" preprocessor.Leave: %s", reflect.TypeOf(in))
+	logrus.Infof(" preprocessor.Leave: %s", reflect.TypeOf(in))
 	return in, p.err == nil
 }
 
@@ -528,7 +528,7 @@ func (p *preprocessor) handleTableName(tn *ast.TableName) {
 	tn.TableInfo = table.Meta()
 	dbInfo, _ := p.is.SchemaByName(tn.Schema)
 	tn.DBInfo = dbInfo
-	logrus.Printf("handle tbl name in preprocessor, fill TableInfo DBInfo: %s.%s", dbInfo.Name, tn.TableInfo.Name)
+	logrus.Infof("handle tbl name in preprocessor, fill TableInfo DBInfo: %s.%s", dbInfo.Name, tn.TableInfo.Name)
 }
 
 func (p *preprocessor) resolveShowStmt(node *ast.ShowStmt) {

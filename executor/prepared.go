@@ -302,7 +302,7 @@ func ResetStmtCtx(ctx sessionctx.Context, s ast.StmtNode) {
 		sc.IgnoreZeroInDate = !sessVars.StrictSQLMode || stmt.IgnoreErr
 		sc.Priority = stmt.Priority
 	case *ast.InsertStmt:
-		logrus.Printf("reset stmt ctx for insert : %s", stmt.Text())
+		logrus.Infof("reset stmt ctx for insert : %s", stmt.Text())
 		sc.IgnoreTruncate = false
 		sc.TruncateAsWarning = !sessVars.StrictSQLMode || stmt.IgnoreErr
 		sc.InInsertStmt = true

@@ -132,7 +132,7 @@ func (n *ValueExpr) Accept(v Visitor) (Node, bool) {
 	if _, ok := v.(ShowAstName); ok {
 		writer := bytes.NewBufferString("")
 		n.Format(writer)
-		logrus.Printf("ValueExpr: %s", writer)
+		logrus.Infof("ValueExpr: %s", writer)
 	}
 	return v.Leave(n)
 }

@@ -446,7 +446,7 @@ type RPCClient struct {
 // NewRPCClient creates an RPCClient.
 // Note that close the RPCClient may close the underlying MvccStore.
 func NewRPCClient(cluster *Cluster, mvccStore MVCCStore) *RPCClient {
-	logrus.Printf("new RPCClient with cluster[%s],mvccStore[%s]", cluster, mvccStore)
+	logrus.Infof("new RPCClient with cluster[%s],mvccStore[%s]", cluster, mvccStore)
 	ch := make(chan *tikvrpc.Lease)
 	go tikvrpc.CheckStreamTimeoutLoop(ch)
 	return &RPCClient{

@@ -156,7 +156,7 @@ func (e *baseExecutor) Next(ctx context.Context, chk *chunk.Chunk) error {
 }
 
 func newBaseExecutor(ctx sessionctx.Context, schema *expression.Schema, id string, children ...Executor) baseExecutor {
-	log.Printf("newBaseExecutor")
+	log.Infof("newBaseExecutor")
 	e := baseExecutor{
 		children:     children,
 		ctx:          ctx,
@@ -168,7 +168,7 @@ func newBaseExecutor(ctx sessionctx.Context, schema *expression.Schema, id strin
 		cols := schema.Columns
 		e.retFieldTypes = make([]*types.FieldType, len(cols))
 		for i := range cols {
-			log.Printf("prepare return columns: %s", cols[i])
+			log.Infof("prepare return columns: %s", cols[i])
 			e.retFieldTypes[i] = cols[i].RetType
 		}
 	}

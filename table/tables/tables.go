@@ -213,7 +213,7 @@ func (t *Table) IndexPrefix() kv.Key {
 
 // RecordKey implements table.Table RecordKey interface.
 func (t *Table) RecordKey(h int64) kv.Key {
-	log.Printf("GenRecordKey recordPrefix[%s], h[%d]", t.recordPrefix, h)
+	log.Infof("GenRecordKey recordPrefix[%s], h[%d]", t.recordPrefix, h)
 	return tablecodec.EncodeRecordKey(t.recordPrefix, h)
 }
 
@@ -349,17 +349,17 @@ func (t *Table) getRollbackableMemStore(ctx sessionctx.Context) kv.RetrieverMuta
 	bs := ctx.GetSessionVars().GetWriteStmtBufs().BufStore
 	if bs == nil {
 		bs = kv.NewBufferStore(ctx.Txn(), kv.DefaultTxnMembufCap)
-		log.Printf("new kv.BufferStore")
+		log.Infof("new kv.BufferStore")
 	} else {
 		bs.Reset()
-		log.Printf("reset BufferStore")
+		log.Infof("reset BufferStore")
 	}
 	return bs
 }
 
 // AddRecord implements table.Table AddRecord interface.
 func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleCheck bool) (recordID int64, err error) {
-	log.Printf("AddRecord in Table %s for row: %s", t.Name.L, r)
+	log.Infof("AddRecord in Table %s for row: %s", t.Name.L, r)
 	var hasRecordID bool
 	cols := t.Cols()
 	if len(r) > len(cols) {
@@ -370,7 +370,7 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 		for _, col := range cols {
 			if col.IsPKHandleColumn(t.meta) {
 				recordID = r[col.Offset].GetInt64()
-				log.Printf("got recordId: %d", recordID)
+				log.Infof("got recordId: %d", recordID)
 				hasRecordID = true
 				break
 			}
@@ -381,11 +381,11 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 		if err != nil {
 			return 0, errors.Trace(err)
 		}
-		log.Printf("alloc record id: %d", recordID)
+		log.Infof("alloc record id: %d", recordID)
 	}
 
 	txn := ctx.Txn()
-	log.Printf("get txn, prepare to write data")
+	log.Infof("get txn, prepare to write data")
 	sessVars := ctx.GetSessionVars()
 	// when ImportingData or BatchCheck is true,
 	// no needs to check the key constrains, so we names the variable skipCheck.
@@ -425,13 +425,13 @@ func (t *Table) AddRecord(ctx sessionctx.Context, r []types.Datum, skipHandleChe
 	writeBufs := sessVars.GetWriteStmtBufs()
 	adjustRowValuesBuf(writeBufs, len(row))
 	key := t.RecordKey(recordID)
-	log.Printf("gen record key: %s", key)
+	log.Infof("gen record key: %s", key)
 	writeBufs.RowValBuf, err = tablecodec.EncodeRow(ctx.GetSessionVars().StmtCtx, row, colIDs, writeBufs.RowValBuf, writeBufs.AddRowValues)
 	if err != nil {
 		return 0, errors.Trace(err)
 	}
 	value := writeBufs.RowValBuf
-	log.Printf("gen record value: %s", value)
+	log.Infof("gen record value: %s", value)
 	if err = txn.Set(key, value); err != nil {
 		return 0, errors.Trace(err)
 	}
@@ -474,7 +474,7 @@ func (t *Table) genIndexKeyStr(colVals []types.Datum) (string, error) {
 				return "", errors.Trace(err)
 			}
 		}
-		log.Printf("check index col NULL: %s", cvs)
+		log.Infof("check index col NULL: %s", cvs)
 		strVals = append(strVals, cvs)
 	}
 	return strings.Join(strVals, "-"), nil
@@ -495,20 +495,20 @@ func (t *Table) addIndices(ctx sessionctx.Context, recordID int64, r []types.Dat
 	writeBufs := ctx.GetSessionVars().GetWriteStmtBufs()
 	indexVals := writeBufs.IndexValsBuf
 	for _, v := range t.WritableIndices() {
-		log.Printf("get writable index: %s", v)
+		log.Infof("get writable index: %s", v)
 		var err2 error
 		indexVals, err2 = v.FetchValues(r, indexVals)
 		if err2 != nil {
 			return 0, errors.Trace(err2)
 		}
-		log.Printf("get writable index row values: %s", indexVals)
+		log.Infof("get writable index row values: %s", indexVals)
 		var dupKeyErr error
 		if !skipCheck && (v.Meta().Unique || v.Meta().Primary) {
 			entryKey, err1 := t.genIndexKeyStr(indexVals)
 			if err1 != nil {
 				return 0, errors.Trace(err1)
 			}
-			log.Printf("get entry key for index: %s", entryKey)
+			log.Infof("get entry key for index: %s", entryKey)
 			dupKeyErr = kv.ErrKeyExists.FastGen("Duplicate entry '%s' for key '%s'", entryKey, v.Meta().Name)
 			txn.SetOption(kv.PresumeKeyNotExistsError, dupKeyErr)
 		}
