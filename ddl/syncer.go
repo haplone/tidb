@@ -124,6 +124,7 @@ func (s *schemaVersionSyncer) putKV(ctx context.Context, retryCnt int, key, val 
 
 // Init implements SchemaSyncer.Init interface.
 func (s *schemaVersionSyncer) Init(ctx context.Context) error {
+	log.Infof("init schemaVersionSyncer")
 	startTime := time.Now()
 	var err error
 	defer func() {

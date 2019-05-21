@@ -13,7 +13,10 @@
 
 package domain
 
-import "github.com/pingcap/tidb/sessionctx"
+import (
+	"github.com/pingcap/tidb/sessionctx"
+	"github.com/sirupsen/logrus"
+)
 
 // domainKeyType is a dummy type to avoid naming collision in context.
 type domainKeyType int
@@ -27,6 +30,7 @@ const domainKey domainKeyType = 0
 
 // BindDomain binds domain to context.
 func BindDomain(ctx sessionctx.Context, domain *Domain) {
+	logrus.Infof("bind domain to ctx -- domain[%s] ctx[%s]", domain, ctx)
 	ctx.SetValue(domainKey, domain)
 }
 
@@ -36,5 +40,6 @@ func GetDomain(ctx sessionctx.Context) *Domain {
 	if !ok {
 		return nil
 	}
+	logrus.Infof("get domain by ctx domain[%s] ctx[%s]", v, ctx)
 	return v
 }

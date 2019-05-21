@@ -379,6 +379,7 @@ func NewSessionVars() *SessionVars {
 	}
 	vars.PlanCacheEnabled = config.GetGlobalConfig().PlanCache.Enabled
 	terror.Log(vars.SetSystemVar(TiDBEnableStreaming, enableStreaming))
+	logrus.Infof("new SessionVars")
 	return vars
 }
 

@@ -50,6 +50,7 @@ type TxnState struct {
 }
 
 func (st *TxnState) init() {
+	log.Infof("init TxnState ")
 	st.buf = kv.NewMemDbBuffer(kv.DefaultTxnMembufCap)
 	st.mutations = make(map[int64]*binlog.TableMutation)
 }

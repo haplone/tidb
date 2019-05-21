@@ -250,6 +250,7 @@ func (d *ddl) asyncNotifyEvent(e *util.Event) {
 // NewDDL creates a new DDL.
 func NewDDL(ctx context.Context, etcdCli *clientv3.Client, store kv.Storage,
 	infoHandle *infoschema.Handle, hook Callback, lease time.Duration, ctxPool *pools.ResourcePool) DDL {
+	log.Infof("new DDL it's background module")
 	return newDDL(ctx, etcdCli, store, infoHandle, hook, lease, ctxPool)
 }
 

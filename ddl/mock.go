@@ -14,6 +14,7 @@
 package ddl
 
 import (
+	"github.com/sirupsen/logrus"
 	"sync/atomic"
 	"time"
 
@@ -41,6 +42,7 @@ func NewMockSchemaSyncer() SchemaSyncer {
 
 // Init implements SchemaSyncer.Init interface.
 func (s *mockSchemaSyncer) Init(ctx context.Context) error {
+	logrus.Infof("init mockSchemaSyncer")
 	s.globalVerCh = make(chan clientv3.WatchResponse, 1)
 	return nil
 }

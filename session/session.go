@@ -1209,6 +1209,7 @@ func runInBootstrapSession(store kv.Storage, bootstrap func(Session)) {
 }
 
 func createSession(store kv.Storage) (*session, error) {
+	log.Infof("create session with store[%s]", store)
 	dom, err := domap.Get(store)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -1235,6 +1236,7 @@ func createSession(store kv.Storage) (*session, error) {
 // to change some system tables. But at that time, we have been already in
 // a lock context, which cause we can't call createSesion directly.
 func createSessionWithDomain(store kv.Storage, dom *domain.Domain) (*session, error) {
+	log.Infof("create session with domain and store -- domain[%s], store[%s]", dom, store)
 	s := &session{
 		store:       store,
 		parser:      parser.New(),

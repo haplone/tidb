@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -201,6 +202,7 @@ func (s *tikvStore) TLSConfig() *tls.Config {
 
 // StartGCWorker starts GC worker, it's called in BootstrapSession, don't call this function more than once.
 func (s *tikvStore) StartGCWorker() error {
+	log.Infof("start gc worker")
 	if !s.enableGC || NewGCHandlerFunc == nil {
 		return nil
 	}
@@ -209,6 +211,7 @@ func (s *tikvStore) StartGCWorker() error {
 	if err != nil {
 		return errors.Trace(err)
 	}
+	log.Infof("gc worker is %s", reflect.TypeOf(gcWorker))
 	gcWorker.Start()
 	s.gcWorker = gcWorker
 	return nil
