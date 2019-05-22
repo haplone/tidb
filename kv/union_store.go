@@ -209,6 +209,7 @@ func (us *unionStore) markLazyConditionPair(k Key, v []byte, e error) {
 
 // CheckLazyConditionPairs implements the UnionStore interface.
 func (us *unionStore) CheckLazyConditionPairs() error {
+	logrus.Infof("unionStore CheckLazyConditionPairs to_specify")
 	if len(us.lazyConditionPairs) == 0 {
 		return nil
 	}

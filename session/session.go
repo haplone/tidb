@@ -315,6 +315,7 @@ func (s *session) doCommit(ctx context.Context) error {
 	for id := range relatedTables {
 		tableIDs = append(tableIDs, id)
 	}
+	log.Infof("get modified tables tableIds[%s]", tableIDs)
 	// Set this option for 2 phase commit to validate schema lease.
 	s.txn.SetOption(kv.SchemaLeaseChecker, &schemaLeaseChecker{
 		SchemaValidator: domain.GetDomain(s).SchemaValidator,
@@ -331,6 +332,7 @@ func (s *session) doCommitWithRetry(ctx context.Context) error {
 	var txnSize int
 	if s.txn.Valid() {
 		txnSize = s.txn.Size()
+		log.Infof("have %d keys in txn", txnSize)
 	}
 	err := s.doCommit(ctx)
 	if err != nil {
@@ -386,11 +388,6 @@ func (s *session) doCommitWithRetry(ctx context.Context) error {
 }
 
 func (s *session) CommitTxn(ctx context.Context) error {
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		span = opentracing.StartSpan("session.CommitTxn", opentracing.ChildOf(span.Context()))
-		defer span.Finish()
-	}
-
 	err := s.doCommitWithRetry(ctx)
 	label := metrics.LblOK
 	if err != nil {
@@ -771,109 +768,64 @@ func (s *session) executeStatement(ctx context.Context, connID uint64, stmtNode 
 
 // code_analysis 真正开工
 func (s *session) Execute(ctx context.Context, sql string) (recordSets []ast.RecordSet, err error) {
-	log.Println("==================")
+	log.Infof("==================")
 	log.Infof("execute sql starts here: %s", sql)
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		span, ctx = opentracing.StartSpanFromContext(ctx, "session.Execute")
-		defer span.Finish()
-	}
+
+	connID := s.sessionVars.ConnectionID
 
 	// code_analysis 重置事务的上下文
 	s.PrepareTxnCtx(ctx)
-	var (
-		cacheKey         kvcache.Key
-		cacheValue       kvcache.Value
-		hitCache         = false
-		connID           = s.sessionVars.ConnectionID
-		planCacheEnabled = s.sessionVars.PlanCacheEnabled // Its value is read from the global configuration, and it will be only updated in tests.
-	)
 
-	// code_analysis 这边主要是为TP类sql优化的
-	if planCacheEnabled {
-		schemaVersion := domain.GetDomain(s).InfoSchema().SchemaMetaVersion()
-		readOnly := s.Txn() == nil || s.Txn().IsReadOnly()
-
-		cacheKey = plan.NewSQLCacheKey(s.sessionVars, sql, schemaVersion, readOnly)
-		cacheValue, hitCache = plan.GlobalPlanCache.Get(cacheKey)
+	// code_analysis 为txn加载配置variables
+	err = s.loadCommonGlobalVariablesIfNeeded()
+	if err != nil {
+		return nil, errors.Trace(err)
 	}
 
-	if hitCache {
-		// code_analysis TP优化分支，与insert 无关
-		metrics.PlanCacheCounter.WithLabelValues("select").Inc()
-		stmtNode := cacheValue.(*plan.SQLCacheValue).StmtNode
-		stmt := &executor.ExecStmt{
-			InfoSchema: executor.GetInfoSchema(s),
-			Plan:       cacheValue.(*plan.SQLCacheValue).Plan,
-			Expensive:  cacheValue.(*plan.SQLCacheValue).Expensive,
-			Text:       stmtNode.Text(),
-			StmtNode:   stmtNode,
-			Ctx:        s,
-		}
+	charsetInfo, collation := s.sessionVars.GetCharsetInfo()
 
+	// Step1: Compile query string to abstract syntax trees(ASTs).
+	startTS := time.Now()
+	// code_analysis 将sql文本转为ast数组
+	stmtNodes, err := s.ParseSQL(ctx, sql, charsetInfo, collation)
+	if err != nil {
+		s.rollbackOnError(ctx)
+		log.Warnf("con:%d parse error:\n%v\n%s", connID, err, sql)
+		return nil, errors.Trace(err)
+	}
+	metrics.SessionExecuteParseDuration.Observe(time.Since(startTS).Seconds())
+
+	compiler := executor.Compiler{Ctx: s}
+	for _, stmtNode := range stmtNodes {
+		switch n := stmtNode.(type) {
+		case *ast.InsertStmt:
+			log.Infof("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
+			var count int
+			count = 0
+			asn := ast.ShowAstName{Count: &count}
+			stmtNode.Accept(asn)
+		}
+		// code_analysis sql执行前，再重置下上下文
 		s.PrepareTxnCtx(ctx)
+
+		// Step2: Transform abstract syntax tree to a physical plan(stored in executor.ExecStmt).
+		startTS = time.Now()
+		// Some executions are done in compile stage, so we reset them before compile.
+		// code_analysis 根据不同的ast类型，准备上下文
 		executor.ResetStmtCtx(s, stmtNode)
-		if recordSets, err = s.executeStatement(ctx, connID, stmtNode, stmt, recordSets); err != nil {
-			return nil, errors.Trace(err)
-		}
-	} else {
-		// code_analysis 为txn加载配置variables
-		err = s.loadCommonGlobalVariablesIfNeeded()
-		if err != nil {
-			return nil, errors.Trace(err)
-		}
-
-		charsetInfo, collation := s.sessionVars.GetCharsetInfo()
-
-		// Step1: Compile query string to abstract syntax trees(ASTs).
-		startTS := time.Now()
-		// code_analysis 将sql文本转为ast数组
-		stmtNodes, err := s.ParseSQL(ctx, sql, charsetInfo, collation)
+		// code_analysis 将ast通过 logical plan, physical plan 最终转为executor,plan 的优化等核心都在这里
+		stmt, err := compiler.Compile(ctx, stmtNode)
+		log.Infof("got ExecStmt: %s", reflect.TypeOf(stmt))
 		if err != nil {
 			s.rollbackOnError(ctx)
-			log.Warnf("con:%d parse error:\n%v\n%s", connID, err, sql)
+			log.Warnf("con:%d compile error:\n%v\n%s", connID, err, sql)
 			return nil, errors.Trace(err)
 		}
-		metrics.SessionExecuteParseDuration.Observe(time.Since(startTS).Seconds())
+		// Step3: Cache the physical plan if possible.
 
-		compiler := executor.Compiler{Ctx: s}
-		for _, stmtNode := range stmtNodes {
-			switch n := stmtNode.(type) {
-			case *ast.InsertStmt:
-				log.Infof("got ast here: %s --- %s", stmtNode.Text(), n.Table.TableRefs.Left.Text())
-				var count int
-				count = 0
-				asn := ast.ShowAstName{Count: &count}
-				stmtNode.Accept(asn)
-			}
-			// code_analysis sql执行前，再重置下上下文
-			s.PrepareTxnCtx(ctx)
-
-			// Step2: Transform abstract syntax tree to a physical plan(stored in executor.ExecStmt).
-			startTS = time.Now()
-			// Some executions are done in compile stage, so we reset them before compile.
-			// code_analysis 根据不同的ast类型，准备上下文
-			executor.ResetStmtCtx(s, stmtNode)
-			// code_analysis 将ast通过 logical plan, physical plan 最终转为executor,plan 的优化等核心都在这里
-			stmt, err := compiler.Compile(ctx, stmtNode)
-			log.Infof("got ExecStmt: %s", reflect.TypeOf(stmt))
-			if err != nil {
-				s.rollbackOnError(ctx)
-				log.Warnf("con:%d compile error:\n%v\n%s", connID, err, sql)
-				return nil, errors.Trace(err)
-			}
-			metrics.SessionExecuteCompileDuration.Observe(time.Since(startTS).Seconds())
-
-			// Step3: Cache the physical plan if possible.
-			if planCacheEnabled && stmt.Cacheable && len(stmtNodes) == 1 && !s.GetSessionVars().StmtCtx.HistogramsNotLoad() {
-				plan.GlobalPlanCache.Put(cacheKey, plan.NewSQLCacheValue(stmtNode, stmt.Plan, stmt.Expensive))
-			} else {
-				log.Infof("insert sql will not cache ,it's for TP select")
-			}
-
-			// Step4: Execute the physical plan.
-			if recordSets, err = s.executeStatement(ctx, connID, stmtNode, stmt, recordSets); err != nil {
-				return nil, errors.Trace(err)
-			}
+		// Step4: Execute the physical plan.
+		if recordSets, err = s.executeStatement(ctx, connID, stmtNode, stmt, recordSets); err != nil {
+			return nil, errors.Trace(err)
 		}
 	}
 

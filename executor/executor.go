@@ -156,7 +156,7 @@ func (e *baseExecutor) Next(ctx context.Context, chk *chunk.Chunk) error {
 }
 
 func newBaseExecutor(ctx sessionctx.Context, schema *expression.Schema, id string, children ...Executor) baseExecutor {
-	log.Infof("newBaseExecutor")
+	log.Infof("newBaseExecutor : prepare column return type")
 	e := baseExecutor{
 		children:     children,
 		ctx:          ctx,

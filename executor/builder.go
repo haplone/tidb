@@ -42,7 +42,7 @@ import (
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/admin"
 	"github.com/pingcap/tidb/util/ranger"
-	tipb "github.com/pingcap/tipb/go-tipb"
+	"github.com/pingcap/tipb/go-tipb"
 	"golang.org/x/net/context"
 )
 
@@ -522,7 +522,7 @@ func (b *executorBuilder) buildInsert(v *plan.Insert) Executor {
 		SelectExec:            selectExec,
 	}
 
-	logrus.Infof("new executor/InsertValues")
+	logrus.Infof("new executor/InsertValues for cache values")
 
 	ivs.Table = v.Table
 	if v.IsReplace {
@@ -534,7 +534,7 @@ func (b *executorBuilder) buildInsert(v *plan.Insert) Executor {
 		Priority:     v.Priority,
 		IgnoreErr:    v.IgnoreErr,
 	}
-	logrus.Infof("new executor/InsertExec")
+	logrus.Infof("new executor/InsertExec wrap InsertValues and OnDuplicate,priority,ignoreErr")
 	return insert
 }
 

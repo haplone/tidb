@@ -103,6 +103,7 @@ func (st *TxnState) changePendingToValid(txnCap int) error {
 }
 
 func (st *TxnState) changeToInvalid() {
+	log.Infof("TxnState -> invalid clean Transaction")
 	st.Transaction = nil
 	st.txnFuture = nil
 }

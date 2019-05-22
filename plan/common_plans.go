@@ -311,6 +311,7 @@ type InsertGeneratedColumns struct {
 }
 
 // Insert represents an insert plan.
+// not logical or physical
 type Insert struct {
 	baseSchemaProducer
 

@@ -30,7 +30,7 @@ import (
 	"github.com/pingcap/tidb/tablecodec"
 	"github.com/pingcap/tidb/terror"
 	"github.com/pingcap/tidb/util/goroutine_pool"
-	binlog "github.com/pingcap/tipb/go-binlog"
+	"github.com/pingcap/tipb/go-binlog"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -84,6 +84,7 @@ type twoPhaseCommitter struct {
 
 // newTwoPhaseCommitter creates a twoPhaseCommitter.
 func newTwoPhaseCommitter(txn *tikvTxn, connID uint64) (*twoPhaseCommitter, error) {
+	log.Infof("new twoPhaseCommitter with connId[%d],tikvTxn[%s]", connID, txn)
 	var (
 		keys    [][]byte
 		size    int

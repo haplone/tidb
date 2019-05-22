@@ -62,7 +62,7 @@ func (dm *domainMap) Get(store kv.Storage) (d *domain.Domain, err error) {
 	ddlLease = schemaLease
 	statisticLease = statsLease
 	err = util.RunWithRetry(util.DefaultMaxRetries, util.RetryInterval, func() (retry bool, err1 error) {
-		log.Infof("store %v new domain, ddl lease %v, stats lease %d", store.UUID(), ddlLease, statisticLease)
+		log.Infof("new Domain with store %v new domain, ddl lease %v, stats lease %d", store.UUID(), ddlLease, statisticLease)
 		factory := createSessionFunc(store)
 		sysFactory := createSessionWithDomainFunc(store)
 		d = domain.NewDomain(store, ddlLease, statisticLease, factory)
@@ -186,6 +186,7 @@ func runStmt(ctx context.Context, sctx sessionctx.Context, s ast.Statement) (ast
 			err1 := se.RollbackTxn(ctx1)
 			terror.Log(errors.Trace(err1))
 		} else {
+			log.Infof("---------------- runStmt CommitTxn")
 			err = se.CommitTxn(ctx1)
 		}
 	} else {

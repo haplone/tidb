@@ -899,7 +899,7 @@ func (b *planBuilder) resolveGeneratedColumns(columns []*table.Column, onDups ma
 }
 
 func (b *planBuilder) buildInsert(insert *ast.InsertStmt) Plan {
-	logrus.Infof("build insert in planBuilder")
+	logrus.Infof("build insert in planBuilder prepare columns and values")
 	ts, ok := insert.Table.TableRefs.Left.(*ast.TableSource)
 	if !ok {
 		b.err = infoschema.ErrTableNotExists.GenByArgs()

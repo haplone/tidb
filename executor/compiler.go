@@ -18,7 +18,6 @@ import (
 	"strings"
 
 	"github.com/juju/errors"
-	"github.com/opentracing/opentracing-go"
 	"github.com/pingcap/tidb/ast"
 	"github.com/pingcap/tidb/config"
 	"github.com/pingcap/tidb/infoschema"
@@ -36,11 +35,6 @@ type Compiler struct {
 
 // Compile compiles an ast.StmtNode to a physical plan.
 func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStmt, error) {
-	if span := opentracing.SpanFromContext(ctx); span != nil {
-		span1 := opentracing.StartSpan("executor.Compile", opentracing.ChildOf(span.Context()))
-		defer span1.Finish()
-	}
-
 	// code_analysis 获取所有db、table的元数据句柄
 	infoSchema := GetInfoSchema(c.Ctx)
 	log.Infof("get infoschema: %s", strings.Join(infoSchema.AllSchemaNames(), ","))
