@@ -61,6 +61,7 @@ func (s *testSessionSuite) SetUpSuite(c *C) {
 	testleak.BeforeTest()
 	s.cluster = mocktikv.NewCluster()
 	mocktikv.BootstrapWithSingleStore(s.cluster)
+	// code_analysis to_specify how to use mvcc store
 	s.mvccStore = mocktikv.MustNewMVCCStore()
 	store, err := mockstore.NewMockTikvStore(
 		mockstore.WithCluster(s.cluster),

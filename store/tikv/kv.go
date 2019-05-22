@@ -141,6 +141,9 @@ type tikvStore struct {
 	closed    chan struct{} // this is used to nofity when the store is closed
 }
 
+func (ts tikvStore) String() string {
+	return fmt.Sprintf("tikvStore uuid[%s],clusterID[%d], more to show", ts.uuid, ts.clusterID)
+}
 func (s *tikvStore) UpdateSPCache(cachedSP uint64, cachedTime time.Time) {
 	s.spMutex.Lock()
 	s.safePoint = cachedSP

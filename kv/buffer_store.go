@@ -42,7 +42,7 @@ type BufferStore struct {
 
 // NewBufferStore creates a BufferStore using r for read.
 func NewBufferStore(r Retriever, cap int) *BufferStore {
-	logrus.Infof("new BufferStore with Retriever[%s],cap[%d]", reflect.TypeOf(r), cap)
+	logrus.Infof("new BufferStore with Retriever[%s],cap[%d] key is lazyMemBuffer", reflect.TypeOf(r), cap)
 	if cap <= 0 {
 		cap = DefaultTxnMembufCap
 	}

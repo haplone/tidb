@@ -69,6 +69,7 @@ type unionStore struct {
 
 // NewUnionStore builds a new UnionStore.
 func NewUnionStore(snapshot Snapshot) UnionStore {
+	logrus.Infof("new UnionStore with snapshot[%s]", snapshot)
 	return &unionStore{
 		BufferStore:        NewBufferStore(snapshot, DefaultTxnMembufCap),
 		snapshot:           snapshot,
@@ -108,6 +109,7 @@ type lazyMemBuffer struct {
 func (lmb *lazyMemBuffer) Get(k Key) ([]byte, error) {
 	logrus.Infof("lazyMemBuffer Get value by key[%s] in %s", k, reflect.TypeOf(lmb.mb))
 	if lmb.mb == nil {
+		logrus.Infof("Get value failed")
 		return nil, errors.Trace(ErrNotExist)
 	}
 

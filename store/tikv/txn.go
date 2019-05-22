@@ -22,7 +22,7 @@ import (
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/metrics"
 	"github.com/pingcap/tidb/sessionctx"
-	binlog "github.com/pingcap/tipb/go-binlog"
+	"github.com/pingcap/tipb/go-binlog"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
@@ -47,6 +47,7 @@ type tikvTxn struct {
 }
 
 func newTiKVTxn(store *tikvStore) (*tikvTxn, error) {
+	log.Infof(" new tikvTxn with store[%s] key is tikvSnapshot,unionStore and tikvStore", store)
 	bo := NewBackoffer(context.Background(), tsoMaxBackoff)
 	startTS, err := store.getTimestampWithRetry(bo)
 	if err != nil {
@@ -152,6 +153,7 @@ func (txn *tikvTxn) DelOption(opt kv.Option) {
 }
 
 func (txn *tikvTxn) Commit(ctx context.Context) error {
+	log.Infof("tikvTxn Commit")
 	if !txn.valid {
 		return kv.ErrInvalidTxn
 	}

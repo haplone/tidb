@@ -15,7 +15,9 @@ package tikv
 
 import (
 	"crypto/tls"
+	"fmt"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -48,6 +50,14 @@ type SafePointKV interface {
 type MockSafePointKV struct {
 	store    map[string]string
 	mockLock sync.RWMutex
+}
+
+func (ms MockSafePointKV) String() string {
+	var s []string
+	for k, v := range ms.store {
+		s = append(s, fmt.Sprintf("k[%s]v[%s]", k, v))
+	}
+	return fmt.Sprintf("MockSafePointKV %s", strings.Join(s, ","))
 }
 
 // NewMockSafePointKV creates an instance of MockSafePointKV

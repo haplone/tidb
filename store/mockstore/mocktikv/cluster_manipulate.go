@@ -20,7 +20,7 @@ import (
 
 // BootstrapWithSingleStore initializes a Cluster with 1 Region and 1 Store.
 func BootstrapWithSingleStore(cluster *Cluster) (storeID, peerID, regionID uint64) {
-	logrus.Infof("bootstrap cluster in mock")
+	logrus.Infof("-------------------------- bootstrap cluster with single store in mock")
 	ids := cluster.AllocIDs(3)
 	storeID, peerID, regionID = ids[0], ids[1], ids[2]
 	cluster.AddStore(storeID, fmt.Sprintf("store%d", storeID))

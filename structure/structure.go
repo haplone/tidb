@@ -14,8 +14,11 @@
 package structure
 
 import (
+	"fmt"
 	"github.com/pingcap/tidb/kv"
 	"github.com/pingcap/tidb/terror"
+	"github.com/sirupsen/logrus"
+	"reflect"
 )
 
 // structure error codes.
@@ -37,6 +40,7 @@ var (
 
 // NewStructure creates a TxStructure with Retriever, RetrieverMutator and key prefix.
 func NewStructure(reader kv.Retriever, readWriter kv.RetrieverMutator, prefix []byte) *TxStructure {
+	logrus.Infof("new TxStructure with Retriever[%s -- %s],RetrieverMutator[%s -- %s],prefix[%s]", reflect.TypeOf(reader), reader, reflect.TypeOf(readWriter), readWriter, prefix)
 	return &TxStructure{
 		reader:     reader,
 		readWriter: readWriter,
@@ -50,4 +54,9 @@ type TxStructure struct {
 	reader     kv.Retriever
 	readWriter kv.RetrieverMutator
 	prefix     []byte
+}
+
+func (t TxStructure) String() string {
+	return fmt.Sprintf("TxStructure Retriever[%s -- %s],RetrieverMutator[%s -- %s],prefix[%s]",
+		reflect.TypeOf(t.reader), t.reader, reflect.TypeOf(t.readWriter), t.readWriter, t.prefix)
 }

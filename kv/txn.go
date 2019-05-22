@@ -26,6 +26,7 @@ import (
 
 // RunInNewTxn will run the f in a new transaction environment.
 func RunInNewTxn(store Storage, retryable bool, f func(txn Transaction) error) error {
+	log.Infof(" RunInNewTxn with store[%s]", store)
 	var (
 		err           error
 		originalTxnTS uint64

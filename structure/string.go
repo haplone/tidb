@@ -14,6 +14,7 @@
 package structure
 
 import (
+	"github.com/sirupsen/logrus"
 	"strconv"
 
 	"github.com/juju/errors"
@@ -47,6 +48,7 @@ func (t *TxStructure) GetInt64(key []byte) (int64, error) {
 	}
 
 	n, err := strconv.ParseInt(string(v), 10, 64)
+	logrus.Infof("TxStructure GetInt64 key[%s],value[%d]", key, n)
 	return n, errors.Trace(err)
 }
 

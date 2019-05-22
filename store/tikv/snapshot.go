@@ -14,6 +14,7 @@
 package tikv
 
 import (
+	"fmt"
 	"sync"
 	"time"
 	"unsafe"
@@ -46,10 +47,15 @@ type tikvSnapshot struct {
 	syncLog      bool
 }
 
+func (ts tikvSnapshot) String() string {
+	return fmt.Sprintf("tikvSnapshot version[%d],store[%s]", ts.version, ts.store)
+}
+
 var snapshotGP = gp.New(time.Minute)
 
 // newTiKVSnapshot creates a snapshot of an TiKV store.
 func newTiKVSnapshot(store *tikvStore, ver kv.Version) *tikvSnapshot {
+	log.Infof("new tikvSnapshot with version[%d],store[%s]", ver.Ver, store)
 	return &tikvSnapshot{
 		store:    store,
 		version:  ver,

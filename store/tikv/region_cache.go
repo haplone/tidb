@@ -63,6 +63,7 @@ type RegionCache struct {
 
 // NewRegionCache creates a RegionCache.
 func NewRegionCache(pdClient pd.Client) *RegionCache {
+	log.Infof("new RegionCache with pd.Client[%s]", pdClient)
 	c := &RegionCache{
 		pdClient: pdClient,
 	}

@@ -47,7 +47,7 @@ type Cluster struct {
 // NewCluster creates an empty cluster. It needs to be bootstrapped before
 // providing service.
 func NewCluster() *Cluster {
-	logrus.Infof("new Cluster in mock")
+	logrus.Infof("-------------------------- new Cluster in mock")
 	return &Cluster{
 		stores:  make(map[uint64]*Store),
 		regions: make(map[uint64]*Region),
@@ -235,6 +235,7 @@ func (c *Cluster) GetRegionByID(regionID uint64) (*metapb.Region, *metapb.Peer) 
 // Bootstrap creates the first Region. The Stores should be in the Cluster before
 // bootstrap.
 func (c *Cluster) Bootstrap(regionID uint64, storeIDs, peerIDs []uint64, leaderStoreID uint64) {
+	logrus.Infof("bootstrap cluster , we add first region")
 	c.Lock()
 	defer c.Unlock()
 
