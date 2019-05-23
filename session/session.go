@@ -312,10 +312,12 @@ func (s *session) doCommit(ctx context.Context) error {
 	// Get the related table IDs.
 	relatedTables := s.GetSessionVars().TxnCtx.TableDeltaMap
 	tableIDs := make([]int64, 0, len(relatedTables))
+	tableIDsStr := make([]string, 0, len(relatedTables))
 	for id := range relatedTables {
 		tableIDs = append(tableIDs, id)
+		tableIDsStr = append(tableIDsStr, string(id))
 	}
-	log.Infof("get modified tables tableIds[%s]", tableIDs)
+	log.Infof("get modified tables tableIds[%s]", tableIDsStr)
 	// Set this option for 2 phase commit to validate schema lease.
 	s.txn.SetOption(kv.SchemaLeaseChecker, &schemaLeaseChecker{
 		SchemaValidator: domain.GetDomain(s).SchemaValidator,

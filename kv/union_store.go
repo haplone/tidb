@@ -134,6 +134,7 @@ func (lmb *lazyMemBuffer) Delete(k Key) error {
 }
 
 func (lmb *lazyMemBuffer) Seek(k Key) (Iterator, error) {
+	logrus.Infof("lazyMemBuffer Seek key[%s] memBuffer:[%s]", k, reflect.TypeOf(lmb.mb))
 	if lmb.mb == nil {
 		return invalidIterator{}, nil
 	}
