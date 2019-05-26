@@ -172,6 +172,10 @@ type Column struct {
 	InOperand bool
 }
 
+//func (c Column) String() string {
+//	return fmt.Sprintf("expression.Column %s.%s.%s", c.DBName.L, c.OrigColName.L, c.OrigColName.L)
+//}
+
 // Equal implements Expression interface.
 func (col *Column) Equal(_ sessionctx.Context, expr Expression) bool {
 	if newCol, ok := expr.(*Column); ok {

@@ -16,6 +16,7 @@ package statistics
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"strings"
 	"sync"
@@ -55,6 +56,10 @@ type Table struct {
 	name    string
 }
 
+//func (t Table) String() string {
+//	return fmt.Sprintf("statistics.Table name[%s],Version[%d],HistColl[%s]", t.name, t.Version, t.HistColl)
+//}
+
 // HistColl is a collection of histogram. It collects enough information for plan to calculate the selectivity.
 type HistColl struct {
 	PhysicalID int64
@@ -70,6 +75,13 @@ type HistColl struct {
 	Pseudo      bool
 	Count       int64
 	ModifyCount int64 // Total modify count in a table.
+}
+
+func (h HistColl) String() string {
+	if h.HavePhysicalID {
+		return fmt.Sprintf("HistColl[%d] ,count[%d],columns[%s], indeices[%s]", h.PhysicalID, h.Count, h.Columns, h.Indices)
+	}
+	return fmt.Sprintf("HistColl count[%d]", h.Count)
 }
 
 func (t *Table) copy() *Table {
@@ -636,6 +648,7 @@ func PseudoTable(tblInfo *model.TableInfo) *Table {
 			t.Indices[idx.ID] = &Index{Info: idx}
 		}
 	}
+	logrus.Infof("PseudoTable %s", t)
 	return t
 }
 

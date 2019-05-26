@@ -15,6 +15,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"math/bits"
 	"reflect"
@@ -128,10 +129,12 @@ func (b *planBuilder) buildAggregation(p LogicalPlan, aggFuncList []*ast.Aggrega
 }
 
 func (b *planBuilder) buildResultSetNode(node ast.ResultSetNode) (p LogicalPlan, err error) {
+	logrus.Infof("buildResultSetNode for %s", reflect.TypeOf(node))
 	switch x := node.(type) {
 	case *ast.Join:
 		return b.buildJoin(x)
 	case *ast.TableSource:
+		logrus.Infof("build tableSource for %s", reflect.TypeOf(x.Source))
 		switch v := x.Source.(type) {
 		case *ast.SelectStmt:
 			p, err = b.buildSelect(v)
@@ -316,6 +319,7 @@ func (p *LogicalJoin) setPreferredJoinType(hintInfo *tableHintInfo) error {
 }
 
 func (b *planBuilder) buildJoin(joinNode *ast.Join) (LogicalPlan, error) {
+	logrus.Infof("buildJoin for %s", reflect.TypeOf(joinNode))
 	// We will construct a "Join" node for some statements like "INSERT",
 	// "DELETE", "UPDATE", "REPLACE". For this scenario "joinNode.Right" is nil
 	// and we only build the left "ResultSetNode".
@@ -1860,11 +1864,13 @@ func getStatsTable(ctx sessionctx.Context, tblInfo *model.TableInfo, pid int64) 
 
 	// 2. table row count from statistics is zero.
 	if statsTbl.Count == 0 {
+		logrus.Infof("count is 0,use default")
 		return statistics.PseudoTable(tblInfo)
 	}
 
 	// 3. statistics is outdated.
 	if statsTbl.IsOutdated() {
+		logrus.Infof(" outdated to_specify")
 		tbl := *statsTbl
 		tbl.Pseudo = true
 		statsTbl = &tbl
@@ -1878,6 +1884,7 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 	if dbName.L == "" {
 		dbName = model.NewCIStr(b.ctx.GetSessionVars().CurrentDB)
 	}
+	logrus.Infof("buildDataSource for %s.%s", dbName.L, tn.Name.L)
 
 	tbl, err := b.is.TableByName(dbName, tn.Name)
 	if err != nil {
@@ -1904,7 +1911,10 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 	}
 	var statisticTable *statistics.Table
 	if _, ok := tbl.(table.PartitionedTable); !ok {
+		logrus.Infof("%s[%s] is not a partitioned table ", tn.Name.L, reflect.TypeOf(tbl))
 		statisticTable = getStatsTable(b.ctx, tbl.Meta(), tbl.Meta().ID)
+	} else {
+		logrus.Infof("%s[%s] is a partitioned table ", tn.Name.L, reflect.TypeOf(tbl))
 	}
 
 	ds := DataSource{
@@ -1937,12 +1947,14 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 		schema.Append(newCol)
 	}
 	ds.SetSchema(schema)
+	logrus.Infof("get expression.Schema %s", schema)
 
 	// We append an extra handle column to the schema when "ds" is not a memory
 	// table e.g. table in the "INFORMATION_SCHEMA" database, and the handle
 	// column is not the primary key of "ds".
 	isMemDB := infoschema.IsMemoryDB(ds.DBName.L)
 	if !isMemDB && handleCol == nil {
+		logrus.Infof("new extra handle column %s[%d]", model.ExtraHandleName, model.ExtraHandleID)
 		ds.Columns = append(ds.Columns, model.NewExtraHandleColInfo())
 		handleCol = ds.newExtraHandleSchemaCol()
 		schema.Append(handleCol)
@@ -1950,6 +1962,7 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 	if handleCol != nil {
 		schema.TblID2Handle[tableInfo.ID] = []*expression.Column{handleCol}
 	}
+	logrus.Infof("handle column is %s", handleCol)
 
 	var result LogicalPlan = ds
 

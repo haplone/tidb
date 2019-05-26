@@ -16,6 +16,7 @@ package core
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/cznic/mathutil"
@@ -181,6 +182,9 @@ type planBuilder struct {
 	inStraightJoin bool
 }
 
+func (b planBuilder) String() string {
+	return fmt.Sprintf("planBuilder to_specify %s", "")
+}
 func (b *planBuilder) build(node ast.Node) (Plan, error) {
 	b.optFlag = flagPrunColumns
 	switch x := node.(type) {
@@ -367,10 +371,13 @@ func isPrimaryIndexHint(indexName model.CIStr) bool {
 }
 
 func getPossibleAccessPaths(indexHints []*ast.IndexHint, tblInfo *model.TableInfo) ([]*accessPath, error) {
+	logrus.Infof("getPossibleAccessPaths for tblInfo[%d.%s] to_specify indexHint", tblInfo.ID, tblInfo.Name.L)
 	publicPaths := make([]*accessPath, 0, len(tblInfo.Indices)+1)
+	logrus.Infof("add tbl path")
 	publicPaths = append(publicPaths, &accessPath{isTablePath: true})
 	for _, index := range tblInfo.Indices {
 		if index.State == model.StatePublic {
+			logrus.Infof("add index path: %s", index.Name.L)
 			publicPaths = append(publicPaths, &accessPath{index: index})
 		}
 	}
@@ -412,6 +419,10 @@ func getPossibleAccessPaths(indexHints []*ast.IndexHint, tblInfo *model.TableInf
 	// we have to use table scan.
 	if len(available) == 0 {
 		available = append(available, &accessPath{isTablePath: true})
+	}
+
+	for _, p := range available {
+		logrus.Infof("available path: %s", p)
 	}
 	return available, nil
 }

@@ -14,6 +14,10 @@
 package util
 
 import (
+	"github.com/pingcap/parser/ast"
+	"github.com/sirupsen/logrus"
+	"reflect"
+	"strings"
 	"time"
 )
 
@@ -36,4 +40,38 @@ type SessionManager interface {
 	// ShowProcessList returns map[connectionID]ProcessInfo
 	ShowProcessList() map[uint64]ProcessInfo
 	Kill(connectionID uint64, query bool)
+}
+
+type AstVisitor struct {
+	Level *int
+}
+
+func (a AstVisitor) Enter(in ast.Node) (out ast.Node, skipChildren bool) {
+	var p []string
+	for i := 0; i < *a.Level; i++ {
+		p = append(p, " -- ")
+	}
+
+	logrus.Infof("ast enter: %s%s", strings.Join(p, ""), reflect.TypeOf(in))
+
+	*a.Level += 1
+	return in, false
+}
+
+func (a AstVisitor) Leave(in ast.Node) (out ast.Node, ok bool) {
+	*a.Level -= 1
+	var p []string
+	for i := 0; i < *a.Level; i++ {
+		p = append(p, " -- ")
+	}
+	//logrus.Infof("ast leave: %s%s", strings.Join(p, ""), reflect.TypeOf(in))
+
+	return in, true
+}
+
+func Accept(n ast.Node) {
+	var l int
+	v := AstVisitor{Level: &l}
+	logrus.Info("------------------ show ast")
+	n.Accept(v)
 }

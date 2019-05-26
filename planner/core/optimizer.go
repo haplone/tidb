@@ -14,6 +14,7 @@
 package core
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/pingcap/errors"
@@ -105,6 +106,8 @@ func BuildLogicalPlan(ctx sessionctx.Context, node ast.Node, is infoschema.InfoS
 		is:        is,
 		colMapper: make(map[*ast.ColumnNameExpr]int),
 	}
+	logrus.Info("------------------- logical plan")
+	logrus.Infof("got planBuilder: %s", builder)
 	p, err := builder.build(node)
 	if err != nil {
 		return nil, errors.Trace(err)

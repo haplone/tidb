@@ -20,6 +20,7 @@ import (
 )
 
 // StatsInfo stores the basic information of statistics for the plan's output. It is used for cost estimation.
+// code_analysis for_optimize
 type StatsInfo struct {
 	RowCount    float64
 	Cardinality []float64

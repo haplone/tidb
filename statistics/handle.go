@@ -16,6 +16,7 @@ package statistics
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -216,8 +217,10 @@ func (h *Handle) GetPartitionStats(tblInfo *model.TableInfo, pid int64) *Table {
 		tbl = PseudoTable(tblInfo)
 		tbl.PhysicalID = pid
 		h.UpdateTableStats([]*Table{tbl}, nil)
+		logrus.Infof("GetPartitionStats %s", tbl)
 		return tbl
 	}
+	logrus.Infof("GetPartitionStats2 %s", tbl)
 	return tbl
 }
 
