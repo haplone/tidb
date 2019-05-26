@@ -149,6 +149,7 @@ func (b *planBuilder) buildResultSetNode(node ast.ResultSetNode) (p LogicalPlan,
 			return nil, errors.Trace(err)
 		}
 
+		logrus.Info("try to fill as name")
 		if v, ok := p.(*DataSource); ok {
 			v.TableAsName = &x.AsName
 		}
@@ -329,11 +330,13 @@ func (b *planBuilder) buildJoin(joinNode *ast.Join) (LogicalPlan, error) {
 
 	b.optFlag = b.optFlag | flagPredicatePushDown
 
+	logrus.Info("build left plan for join")
 	leftPlan, err := b.buildResultSetNode(joinNode.Left)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
+	logrus.Info("build right plan for join")
 	rightPlan, err := b.buildResultSetNode(joinNode.Right)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -353,15 +356,18 @@ func (b *planBuilder) buildJoin(joinNode *ast.Join) (LogicalPlan, error) {
 		joinPlan.JoinType = InnerJoin
 	}
 
+	logrus.Infof("join type %s", joinPlan.JoinType)
 	// Merge sub join's redundantSchema into this join plan. When handle query like
 	// select t2.a from (t1 join t2 using (a)) join t3 using (a);
 	// we can simply search in the top level join plan to find redundant column.
 	var lRedundant, rRedundant *expression.Schema
 	if left, ok := leftPlan.(*LogicalJoin); ok && left.redundantSchema != nil {
 		lRedundant = left.redundantSchema
+		logrus.Infof("left join has redundant schema %s", lRedundant)
 	}
 	if right, ok := rightPlan.(*LogicalJoin); ok && right.redundantSchema != nil {
 		rRedundant = right.redundantSchema
+		logrus.Infof("right join has redundant schema %s", rRedundant)
 	}
 	joinPlan.redundantSchema = expression.MergeSchema(lRedundant, rRedundant)
 
@@ -431,6 +437,7 @@ func (b *planBuilder) buildUsingClause(p *LogicalJoin, leftPlan, rightPlan Logic
 // 	Every column in the first (left) table that is not a common column
 // 	Every column in the second (right) table that is not a common column
 func (b *planBuilder) buildNaturalJoin(p *LogicalJoin, leftPlan, rightPlan LogicalPlan, join *ast.Join) error {
+	logrus.Info("buildNaturalJoin")
 	return b.coalesceCommonColumns(p, leftPlan, rightPlan, join.Tp == ast.RightJoin, nil)
 }
 
@@ -1990,6 +1997,7 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 		proj.SetChildren(result)
 		result = proj
 	}
+	logrus.Infof("Logical plan is %s", reflect.TypeOf(result))
 	return result, nil
 }
 
@@ -2005,6 +2013,7 @@ func (b *planBuilder) projectVirtualColumns(ds *DataSource, columns []*table.Col
 		}
 	}
 	if !hasVirtualGeneratedColumn {
+		logrus.Info(" has no virtual generated column")
 		return nil, nil
 	}
 	var proj = LogicalProjection{
