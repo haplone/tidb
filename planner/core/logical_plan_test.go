@@ -16,6 +16,7 @@ package core
 import (
 	"fmt"
 	"github.com/pingcap/tidb/util"
+	"github.com/pingcap/tidb/util/logutil"
 	"github.com/sirupsen/logrus"
 	"sort"
 	"strings"
@@ -55,6 +56,8 @@ func (s *testPlanSuite) SetUpSuite(c *C) {
 	s.is = infoschema.MockInfoSchema([]*model.TableInfo{MockTable()})
 	s.ctx = mockContext()
 	s.Parser = parser.New()
+
+	logutil.InitLogger(logutil.NewLogConfig("debug", logutil.DefaultLogFormat, "", logutil.EmptyFileLogConfig, false))
 }
 
 func newLongType() types.FieldType {
@@ -1117,25 +1120,25 @@ func (s *testPlanSuite) TestColumnPruning(c *C) {
 		sql string
 		ans map[int][]string
 	}{
-		{
-			sql: "select count(*) from t group by a",
-			ans: map[int][]string{
-				1: {"test.t.a"},
-			},
-		},
-		{
-			sql: "select count(*) from t",
-			ans: map[int][]string{
-				1: {"test.t._tidb_rowid"},
-			},
-		},
-		{
-			sql: "select count(*) from t a join t b where a.a < 1",
-			ans: map[int][]string{
-				1: {"test.a.a"},
-				2: {"test.t._tidb_rowid"},
-			},
-		},
+		//{
+		//	sql: "select count(*) from t group by a",
+		//	ans: map[int][]string{
+		//		1: {"test.t.a"},
+		//	},
+		//},
+		//{
+		//	sql: "select count(*) from t",
+		//	ans: map[int][]string{
+		//		1: {"test.t._tidb_rowid"},
+		//	},
+		//},
+		//{
+		//	sql: "select count(*) from t a join t b where a.a < 1",
+		//	ans: map[int][]string{
+		//		1: {"test.a.a"},
+		//		2: {"test.t._tidb_rowid"},
+		//	},
+		//},
 		{
 			sql: "select count(*) from t a join t b on a.a = b.d",
 			ans: map[int][]string{
@@ -1143,99 +1146,99 @@ func (s *testPlanSuite) TestColumnPruning(c *C) {
 				2: {"test.b.d"},
 			},
 		},
-		{
-			sql: "select count(*) from t a join t b on a.a = b.d order by sum(a.d)",
-			ans: map[int][]string{
-				1: {"test.a.a", "test.a.d"},
-				2: {"test.b.d"},
-			},
-		},
-		{
-			sql: "select count(b.a) from t a join t b on a.a = b.d group by b.b order by sum(a.d)",
-			ans: map[int][]string{
-				1: {"test.a.a", "test.a.d"},
-				2: {"test.b.a", "test.b.b", "test.b.d"},
-			},
-		},
-		{
-			sql: "select * from (select count(b.a) from t a join t b on a.a = b.d group by b.b having sum(a.d) < 0) tt",
-			ans: map[int][]string{
-				1: {"test.a.a", "test.a.d"},
-				2: {"test.b.a", "test.b.b", "test.b.d"},
-			},
-		},
-		{
-			sql: "select (select count(a) from t where b = k.a) from t k",
-			ans: map[int][]string{
-				1: {"test.k.a"},
-				3: {"test.t.a", "test.t.b"},
-			},
-		},
-		{
-			sql: "select exists (select count(*) from t where b = k.a) from t k",
-			ans: map[int][]string{
-				1: {"test.t._tidb_rowid"},
-			},
-		},
-		{
-			sql: "select b = (select count(*) from t where b = k.a) from t k",
-			ans: map[int][]string{
-				1: {"test.k.a", "test.k.b"},
-				3: {"test.t.b"},
-			},
-		},
-		{
-			sql: "select exists (select count(a) from t where b = k.a group by b) from t k",
-			ans: map[int][]string{
-				1: {"test.k.a"},
-				3: {"test.t.b"},
-			},
-		},
-		{
-			sql: "select a as c1, b as c2 from t order by 1, c1 + c2 + c",
-			ans: map[int][]string{
-				1: {"test.t.a", "test.t.b", "test.t.c"},
-			},
-		},
-		{
-			sql: "select a from t where b < any (select c from t)",
-			ans: map[int][]string{
-				1: {"test.t.a", "test.t.b"},
-				3: {"test.t.c"},
-			},
-		},
-		{
-			sql: "select a from t where (b,a) != all (select c,d from t)",
-			ans: map[int][]string{
-				1: {"test.t.a", "test.t.b"},
-				3: {"test.t.c", "test.t.d"},
-			},
-		},
-		{
-			sql: "select a from t where (b,a) in (select c,d from t)",
-			ans: map[int][]string{
-				1: {"test.t.a", "test.t.b"},
-				3: {"test.t.c", "test.t.d"},
-			},
-		},
-		{
-			sql: "select a from t where a in (select a from t s group by t.b)",
-			ans: map[int][]string{
-				1: {"test.t.a"},
-				3: {"test.s.a"},
-			},
-		},
-		{
-			sql: "select t01.a from (select a from t t21 union all select a from t t22) t2 join t t01 on 1 left outer join t t3 on 1 join t t4 on 1",
-			ans: map[int][]string{
-				1:  {"test.t22.a"},
-				3:  {"test.t21.a"},
-				5:  {"t2.a"},
-				8:  {"test.t01.a"},
-				10: {"test.t._tidb_rowid"},
-				12: {"test.t._tidb_rowid"},
-			},
-		},
+		//{
+		//	sql: "select count(*) from t a join t b on a.a = b.d order by sum(a.d)",
+		//	ans: map[int][]string{
+		//		1: {"test.a.a", "test.a.d"},
+		//		2: {"test.b.d"},
+		//	},
+		//},
+		//{
+		//	sql: "select count(b.a) from t a join t b on a.a = b.d group by b.b order by sum(a.d)",
+		//	ans: map[int][]string{
+		//		1: {"test.a.a", "test.a.d"},
+		//		2: {"test.b.a", "test.b.b", "test.b.d"},
+		//	},
+		//},
+		//{
+		//	sql: "select * from (select count(b.a) from t a join t b on a.a = b.d group by b.b having sum(a.d) < 0) tt",
+		//	ans: map[int][]string{
+		//		1: {"test.a.a", "test.a.d"},
+		//		2: {"test.b.a", "test.b.b", "test.b.d"},
+		//	},
+		//},
+		//{
+		//	sql: "select (select count(a) from t where b = k.a) from t k",
+		//	ans: map[int][]string{
+		//		1: {"test.k.a"},
+		//		3: {"test.t.a", "test.t.b"},
+		//	},
+		//},
+		//{
+		//	sql: "select exists (select count(*) from t where b = k.a) from t k",
+		//	ans: map[int][]string{
+		//		1: {"test.t._tidb_rowid"},
+		//	},
+		//},
+		//{
+		//	sql: "select b = (select count(*) from t where b = k.a) from t k",
+		//	ans: map[int][]string{
+		//		1: {"test.k.a", "test.k.b"},
+		//		3: {"test.t.b"},
+		//	},
+		//},
+		//{
+		//	sql: "select exists (select count(a) from t where b = k.a group by b) from t k",
+		//	ans: map[int][]string{
+		//		1: {"test.k.a"},
+		//		3: {"test.t.b"},
+		//	},
+		//},
+		//{
+		//	sql: "select a as c1, b as c2 from t order by 1, c1 + c2 + c",
+		//	ans: map[int][]string{
+		//		1: {"test.t.a", "test.t.b", "test.t.c"},
+		//	},
+		//},
+		//{
+		//	sql: "select a from t where b < any (select c from t)",
+		//	ans: map[int][]string{
+		//		1: {"test.t.a", "test.t.b"},
+		//		3: {"test.t.c"},
+		//	},
+		//},
+		//{
+		//	sql: "select a from t where (b,a) != all (select c,d from t)",
+		//	ans: map[int][]string{
+		//		1: {"test.t.a", "test.t.b"},
+		//		3: {"test.t.c", "test.t.d"},
+		//	},
+		//},
+		//{
+		//	sql: "select a from t where (b,a) in (select c,d from t)",
+		//	ans: map[int][]string{
+		//		1: {"test.t.a", "test.t.b"},
+		//		3: {"test.t.c", "test.t.d"},
+		//	},
+		//},
+		//{
+		//	sql: "select a from t where a in (select a from t s group by t.b)",
+		//	ans: map[int][]string{
+		//		1: {"test.t.a"},
+		//		3: {"test.s.a"},
+		//	},
+		//},
+		//{
+		//	sql: "select t01.a from (select a from t t21 union all select a from t t22) t2 join t t01 on 1 left outer join t t3 on 1 join t t4 on 1",
+		//	ans: map[int][]string{
+		//		1:  {"test.t22.a"},
+		//		3:  {"test.t21.a"},
+		//		5:  {"t2.a"},
+		//		8:  {"test.t01.a"},
+		//		10: {"test.t._tidb_rowid"},
+		//		12: {"test.t._tidb_rowid"},
+		//	},
+		//},
 	}
 	for _, tt := range tests {
 		comment := Commentf("for %s", tt.sql)

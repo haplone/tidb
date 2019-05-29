@@ -14,6 +14,7 @@
 package core
 
 import (
+	"github.com/pingcap/tidb/util"
 	"github.com/sirupsen/logrus"
 	"math"
 
@@ -107,6 +108,8 @@ func BuildLogicalPlan(ctx sessionctx.Context, node ast.Node, is infoschema.InfoS
 		colMapper: make(map[*ast.ColumnNameExpr]int),
 	}
 	logrus.Info("------------------- logical plan")
+	v := util.NewAstVisitor()
+	node.Accept(v)
 	logrus.Infof("got planBuilder: %s", builder)
 	p, err := builder.build(node)
 	if err != nil {

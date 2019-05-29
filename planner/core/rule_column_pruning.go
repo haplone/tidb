@@ -14,7 +14,9 @@
 package core
 
 import (
+	"context"
 	"fmt"
+	"github.com/pingcap/tidb/util/logutil"
 
 	"github.com/pingcap/parser/ast"
 	"github.com/pingcap/parser/model"
@@ -164,13 +166,18 @@ func (p *LogicalUnionScan) PruneColumns(parentUsedCols []*expression.Column) {
 
 // PruneColumns implements LogicalPlan interface.
 func (ds *DataSource) PruneColumns(parentUsedCols []*expression.Column) {
+	ctx := context.Background()
+	logutil.Logger(ctx).Info(fmt.Sprintf("-------------------------- %s.%s", ds.DBName.L, ds.tableInfo.Name.L))
+	logutil.Logger(ctx).Info(fmt.Sprintf("parentUsedCols: %s", parentUsedCols))
 	used := getUsedList(parentUsedCols, ds.schema)
+	logutil.Logger(ctx).Info(fmt.Sprintf("schema1: %s", ds.schema))
 	for i := len(used) - 1; i >= 0; i-- {
 		if !used[i] {
 			ds.schema.Columns = append(ds.schema.Columns[:i], ds.schema.Columns[i+1:]...)
 			ds.Columns = append(ds.Columns[:i], ds.Columns[i+1:]...)
 		}
 	}
+	logutil.Logger(ctx).Info(fmt.Sprintf("schema2: %s", ds.schema))
 	for k, cols := range ds.schema.TblID2Handle {
 		if ds.schema.ColumnIndex(cols[0]) == -1 {
 			delete(ds.schema.TblID2Handle, k)
@@ -182,6 +189,7 @@ func (ds *DataSource) PruneColumns(parentUsedCols []*expression.Column) {
 		ds.Columns = append(ds.Columns, model.NewExtraHandleColInfo())
 		ds.schema.Append(ds.newExtraHandleSchemaCol())
 	}
+	logutil.Logger(ctx).Info(fmt.Sprintf("schema3: %s", ds.schema))
 }
 
 // PruneColumns implements LogicalPlan interface.

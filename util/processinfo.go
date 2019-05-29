@@ -46,6 +46,11 @@ type AstVisitor struct {
 	Level *int
 }
 
+func NewAstVisitor() AstVisitor {
+	var i int
+	return AstVisitor{Level: &i}
+}
+
 func (a AstVisitor) Enter(in ast.Node) (out ast.Node, skipChildren bool) {
 	var p []string
 	for i := 0; i < *a.Level; i++ {

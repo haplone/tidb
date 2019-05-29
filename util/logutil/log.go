@@ -366,6 +366,18 @@ type ctxKeyType int
 
 const ctxLogKey ctxKeyType = iota
 
+func Lf(ctx context.Context, format string, a ...interface{}) {
+	m := fmt.Sprintf(format, a...)
+	Logger(ctx).Info(m)
+}
+func Logf(msg string, a ...interface{}) {
+	m := fmt.Sprintf(msg, a...)
+	Logger(context.Background()).Info(m)
+}
+func Log(msg string) {
+	Logger(context.Background()).Info(msg)
+}
+
 // Logger gets a contextual logger from current context.
 // contextual logger will output common fields from context.
 func Logger(ctx context.Context) *zap.Logger {
