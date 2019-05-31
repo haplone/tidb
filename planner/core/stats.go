@@ -15,6 +15,7 @@ package core
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/pingcap/errors"
@@ -100,6 +101,7 @@ func (ds *DataSource) getStatsByFilter(conds expression.CNFExprs) *property.Stat
 }
 
 func (ds *DataSource) deriveStats() (*property.StatsInfo, error) {
+	logrus.Infof("deriveStats for %s.%s", ds.DBName.L, ds.TableInfo().Name.L)
 	// PushDownNot here can convert query 'not (a != 1)' to 'a = 1'.
 	for i, expr := range ds.pushedDownConds {
 		ds.pushedDownConds[i] = expression.PushDownNot(nil, expr, false)
@@ -130,6 +132,7 @@ func (ds *DataSource) deriveStats() (*property.StatsInfo, error) {
 			break
 		}
 	}
+	logrus.Infof("stats: %s", ds.stats)
 	return ds.stats, nil
 }
 

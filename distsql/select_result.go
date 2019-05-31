@@ -15,6 +15,7 @@ package distsql
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/pingcap/errors"
@@ -131,6 +132,7 @@ func (r *selectResult) NextRaw(ctx context.Context) ([]byte, error) {
 
 // Next reads data to the chunk.
 func (r *selectResult) Next(ctx context.Context, chk *chunk.Chunk) error {
+	logrus.Infof("selectResult next")
 	chk.Reset()
 	for !chk.IsFull() {
 		if r.selectResp == nil || r.respChkIdx == len(r.selectResp.Chunks) {
@@ -193,11 +195,13 @@ func (r *selectResult) getSelectResp() error {
 }
 
 func (r *selectResult) readRowsData(chk *chunk.Chunk) (err error) {
+	logrus.Infof("readRowsData")
 	rowsData := r.selectResp.Chunks[r.respChkIdx].RowsData
 	decoder := codec.NewDecoder(chk, r.ctx.GetSessionVars().Location())
 	for !chk.IsFull() && len(rowsData) > 0 {
 		for i := 0; i < r.rowLen; i++ {
 			rowsData, err = decoder.DecodeOne(rowsData, i, r.fieldTypes[i])
+			logrus.Infof("rowsData: %s", rowsData)
 			if err != nil {
 				return errors.Trace(err)
 			}

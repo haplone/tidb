@@ -17,6 +17,7 @@ import (
 	"github.com/pingcap/tidb/util"
 	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -129,6 +130,7 @@ func checkPrivilege(pm privilege.Manager, vs []visitInfo) bool {
 
 func doOptimize(flag uint64, logic LogicalPlan) (PhysicalPlan, error) {
 	logic, err := logicalOptimize(flag, logic)
+	logrus.Infof("logical plan: %s", reflect.TypeOf(logic))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}

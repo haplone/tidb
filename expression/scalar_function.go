@@ -16,6 +16,8 @@ package expression
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -81,6 +83,7 @@ func NewFunctionBase(ctx sessionctx.Context, funcName string, retType *types.Fie
 }
 
 func newFunctionImpl(ctx sessionctx.Context, fold bool, funcName string, retType *types.FieldType, args ...Expression) (Expression, error) {
+	logrus.Infof("newFunctionImpl funcName: %s", funcName)
 	if retType == nil {
 		return nil, errors.Errorf("RetType cannot be nil for ScalarFunction.")
 	}
@@ -91,6 +94,7 @@ func newFunctionImpl(ctx sessionctx.Context, fold bool, funcName string, retType
 	if !ok {
 		return nil, errFunctionNotExists.GenWithStackByArgs("FUNCTION", funcName)
 	}
+	logrus.Infof("newFI: %s", reflect.TypeOf(fc))
 	funcArgs := make([]Expression, len(args))
 	copy(funcArgs, args)
 	f, err := fc.getFunction(ctx, funcArgs)

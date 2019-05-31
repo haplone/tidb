@@ -14,6 +14,8 @@
 package expression
 
 import (
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -283,6 +285,7 @@ func doPushDownNot(ctx sessionctx.Context, exprs []Expression, not bool) []Expre
 
 // PushDownNot pushes the `not` function down to the expression's arguments.
 func PushDownNot(ctx sessionctx.Context, expr Expression, not bool) Expression {
+	logrus.Infof("PushDownNot for : %s", reflect.TypeOf(expr))
 	if f, ok := expr.(*ScalarFunction); ok {
 		switch f.FuncName.L {
 		case ast.UnaryNot:

@@ -15,6 +15,7 @@ package session_test
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -2431,4 +2432,16 @@ func (s *testSessionSuite) TestTxnGoString(c *C) {
 
 	tk.MustExec("rollback")
 	c.Assert(fmt.Sprintf("%#v", txn), Equals, "Txn{state=invalid}")
+}
+
+func (s *testSessionSuite) TestVariableExpr222(c *C) {
+	tk := testkit.NewTestKitWithInit(c, s.store)
+	tk.MustExec("create table t (id int,name12name varchar(128))")
+	tk.MustExec("insert into t (id,name12name) values(1,'xyb')")
+	tk.MustQuery("select @a:=id, @b:=name12name from t")
+	r := tk.MustQuery("select @b")
+	logrus.Infof("===================== %s", r.Rows()[0][0])
+	fmt.Printf("===================== %s \r\n", r.Rows()[0][0])
+	c.Fail()
+
 }

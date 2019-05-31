@@ -14,6 +14,8 @@
 package core
 
 import (
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -28,7 +30,7 @@ import (
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/sessionctx/variable"
 	"github.com/pingcap/tidb/types"
-	driver "github.com/pingcap/tidb/types/parser_driver"
+	"github.com/pingcap/tidb/types/parser_driver"
 	"github.com/pingcap/tidb/util/chunk"
 )
 
@@ -90,6 +92,7 @@ func (b *planBuilder) rewriteWithPreprocess(exprNode ast.ExprNode, p LogicalPlan
 	b.rewriterCounter++
 	defer func() { b.rewriterCounter-- }()
 
+	logrus.Infof("rewrite expr for node: %s plan: %s", reflect.TypeOf(exprNode), p)
 	rewriter := b.getExpressionRewriter(p)
 	// The rewriter maybe is obtained from "b.rewriterPool", "rewriter.err" is
 	// not nil means certain previous procedure has not handled this error.
@@ -885,9 +888,11 @@ func (er *expressionRewriter) getParamExpression(v *driver.ParamMarkerExpr) expr
 func (er *expressionRewriter) rewriteVariable(v *ast.VariableExpr) {
 	stkLen := len(er.ctxStack)
 	name := strings.ToLower(v.Name)
+	logrus.Infof("=========rewrite name: %s value: %s", name, reflect.TypeOf(v.Value))
 	sessionVars := er.b.ctx.GetSessionVars()
 	if !v.IsSystem {
 		if v.Value != nil {
+			logrus.Info("--==--==---= !IsSystem value!= nil ")
 			er.ctxStack[stkLen-1], er.err = expression.NewFunction(er.ctx,
 				ast.SetVar,
 				er.ctxStack[stkLen-1].GetType(),
@@ -924,8 +929,10 @@ func (er *expressionRewriter) rewriteVariable(v *ast.VariableExpr) {
 	// Variable is @@gobal.variable_name or variable is only global scope variable.
 	if v.IsGlobal || sysVar.Scope == variable.ScopeGlobal {
 		val, err = variable.GetGlobalSystemVar(sessionVars, name)
+		logrus.Infof("get value from global var %s = %s", name, val)
 	} else {
 		val, err = variable.GetSessionSystemVar(sessionVars, name)
+		logrus.Infof("get value from session var %s = %s", name, val)
 	}
 	if err != nil {
 		er.err = errors.Trace(err)

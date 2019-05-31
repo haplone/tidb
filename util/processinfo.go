@@ -58,6 +58,14 @@ func (a AstVisitor) Enter(in ast.Node) (out ast.Node, skipChildren bool) {
 	}
 
 	logrus.Infof("ast enter: %s%s", strings.Join(p, ""), reflect.TypeOf(in))
+	switch tt := in.(type) {
+	case *ast.BinaryOperationExpr:
+		logrus.Infof("left: %s ,op:%s, right: %s", reflect.TypeOf(tt.L), tt.Op, reflect.TypeOf(tt.R))
+	case *ast.VariableExpr:
+		logrus.Infof("VariableExpr__ name: %s value: %s", tt.Name, reflect.TypeOf(tt.Value))
+	case *ast.ColumnNameExpr:
+
+	}
 
 	*a.Level += 1
 	return in, false

@@ -15,6 +15,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/pingcap/tidb/util"
 	"github.com/sirupsen/logrus"
 	"math"
 	"math/bits"
@@ -1710,6 +1711,9 @@ func (b *planBuilder) TableHints() *tableHintInfo {
 }
 
 func (b *planBuilder) buildSelect(sel *ast.SelectStmt) (p LogicalPlan, err error) {
+	logrus.Infof("=============== sql: %s", sel.Text())
+	v := util.NewAstVisitor()
+	sel.Accept(v)
 	if b.pushTableHints(sel.TableHints) {
 		// table hints are only visible in the current SELECT statement.
 		defer b.popTableHints()

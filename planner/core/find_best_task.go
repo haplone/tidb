@@ -14,6 +14,7 @@
 package core
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/pingcap/errors"
@@ -289,6 +290,7 @@ func (ds *DataSource) getIndexCandidate(path *accessPath, prop *property.Physica
 
 // skylinePruning prunes access paths according to different factors. An access path can be pruned only if
 // there exists a path that is not worse than it at all factors and there is at least one better factor.
+// code_analysis to_specify
 func (ds *DataSource) skylinePruning(prop *property.PhysicalProperty) []*candidatePath {
 	candidates := make([]*candidatePath, 0, 4)
 	for _, path := range ds.possibleAccessPaths {
@@ -373,10 +375,12 @@ func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err
 
 	t, err = ds.tryToGetDualTask()
 	if err != nil || t != nil {
+		logrus.Infof("dual task")
 		return t, errors.Trace(err)
 	}
 	t, err = ds.tryToGetMemTask(prop)
 	if err != nil || t != nil {
+		logrus.Infof("mem task")
 		return t, errors.Trace(err)
 	}
 
@@ -385,6 +389,7 @@ func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err
 	candidates := ds.skylinePruning(prop)
 	for _, candidate := range candidates {
 		path := candidate.path
+		logrus.Infof("path in optimize : %s", path)
 		// if we already know the range of the scan is empty, just return a TableDual
 		if len(path.ranges) == 0 && !ds.ctx.GetSessionVars().StmtCtx.UseCache {
 			dual := PhysicalTableDual{}.init(ds.ctx, ds.stats)
@@ -621,6 +626,7 @@ func splitIndexFilterConditions(conditions []expression.Expression, indexColumns
 
 // convertToTableScan converts the DataSource to table scan.
 func (ds *DataSource) convertToTableScan(prop *property.PhysicalProperty, candidate *candidatePath) (task task, err error) {
+	logrus.Infof("try to convertToTableScan in DataSource for %s", candidate.path)
 	// It will be handled in convertToIndexScan.
 	if prop.TaskTp == property.CopDoubleReadTaskType {
 		return invalidTask, nil

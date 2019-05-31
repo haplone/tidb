@@ -14,6 +14,7 @@
 package executor
 
 import (
+	"github.com/sirupsen/logrus"
 	"time"
 
 	"github.com/pingcap/errors"
@@ -27,7 +28,7 @@ import (
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/chunk"
 	"github.com/pingcap/tidb/util/ranger"
-	tipb "github.com/pingcap/tipb/go-tipb"
+	"github.com/pingcap/tipb/go-tipb"
 	"golang.org/x/net/context"
 )
 
@@ -119,6 +120,7 @@ func (e *TableReaderExecutor) Open(ctx context.Context) error {
 // Next fills data into the chunk passed by its caller.
 // The task was actually done by tableReaderHandler.
 func (e *TableReaderExecutor) Next(ctx context.Context, chk *chunk.Chunk) error {
+	logrus.Infof("next runtimeStats: %s", e.runtimeStats)
 	if e.runtimeStats != nil {
 		start := time.Now()
 		defer func() { e.runtimeStats.Record(time.Now().Sub(start), chk.NumRows()) }()
@@ -185,6 +187,7 @@ func (tr *tableResultHandler) open(optionalResult, result distsql.SelectResult) 
 }
 
 func (tr *tableResultHandler) nextChunk(ctx context.Context, chk *chunk.Chunk) error {
+	logrus.Infof("nextChunk optionalFinished: %v", tr.optionalFinished)
 	if !tr.optionalFinished {
 		err := tr.optionalResult.Next(ctx, chk)
 		if err != nil {

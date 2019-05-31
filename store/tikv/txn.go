@@ -228,6 +228,7 @@ func (txn *tikvTxn) Commit(ctx context.Context) error {
 			if *commitDetail != nil {
 				(*commitDetail).TxnRetry += 1
 			} else {
+				// code_analysis for_query_log
 				*commitDetail = committer.detail
 			}
 		}

@@ -14,6 +14,7 @@
 package expression
 
 import (
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/pingcap/errors"
@@ -387,6 +388,7 @@ type setVarFunctionClass struct {
 }
 
 func (c *setVarFunctionClass) getFunction(ctx sessionctx.Context, args []Expression) (sig builtinFunc, err error) {
+	logrus.Infof("getFunction for setVarFunctionClass with args", args)
 	if err = errors.Trace(c.verifyArgs(args)); err != nil {
 		return nil, err
 	}
@@ -408,6 +410,7 @@ func (b *builtinSetVarSig) Clone() builtinFunc {
 }
 
 func (b *builtinSetVarSig) evalString(row chunk.Row) (res string, isNull bool, err error) {
+	// code_analysis
 	var varName string
 	sessionVars := b.ctx.GetSessionVars()
 	varName, isNull, err = b.args[0].EvalString(b.ctx, row)
