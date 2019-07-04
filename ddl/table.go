@@ -61,6 +61,7 @@ func onCreateTable(d *ddlCtx, t *meta.Meta, job *model.Job) (ver int64, _ error)
 	switch tbInfo.State {
 	case model.StateNone:
 		// none -> public
+		log.Info("just convert job state from none to public(simple)")
 		tbInfo.State = model.StatePublic
 		tbInfo.UpdateTS = t.StartTS
 		err = t.CreateTable(schemaID, tbInfo)

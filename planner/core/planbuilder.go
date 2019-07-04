@@ -15,6 +15,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 
 	"github.com/cznic/mathutil"
@@ -1346,6 +1347,7 @@ func (b *planBuilder) buildLoadStats(ld *ast.LoadStatsStmt) Plan {
 }
 
 func (b *planBuilder) buildDDL(node ast.DDLNode) Plan {
+	logrus.Info("use visitfo to collect infos for privilege check")
 	switch v := node.(type) {
 	case *ast.AlterTableStmt:
 		b.visitInfo = append(b.visitInfo, visitInfo{
@@ -1370,6 +1372,7 @@ func (b *planBuilder) buildDDL(node ast.DDLNode) Plan {
 			db:        v.Table.Schema.L,
 			table:     v.Table.Name.L,
 		})
+		logrus.Infof("collect privilege: %s to %s.%s", mysql.Priv2UserCol[mysql.CreatePriv], v.Table.Schema.L, v.Table.Name.L)
 		if v.ReferTable != nil {
 			b.visitInfo = append(b.visitInfo, visitInfo{
 				privilege: mysql.SelectPriv,
@@ -1415,6 +1418,7 @@ func (b *planBuilder) buildDDL(node ast.DDLNode) Plan {
 		})
 	}
 
+	logrus.Info("just use core.DDL to wrap ast.DDLNode")
 	p := &DDL{Statement: node}
 	return p
 }

@@ -2246,3 +2246,8 @@ func (s *testSessionSuite) TestTxnGoString(c *C) {
 	tk.MustExec("rollback")
 	c.Assert(fmt.Sprintf("%#v", txn), Equals, "Txn{state=invalid}")
 }
+
+func (s *testSessionSuite) TestCreateTableForLearn(c *C) {
+	tk := testkit.NewTestKitWithInit(c, s.store)
+	tk.MustExec("create table book(id int,name varchar(128))")
+}

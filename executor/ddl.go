@@ -63,6 +63,7 @@ func (e *DDLExec) toErr(err error) error {
 
 // Next implements the Executor Next interface.
 func (e *DDLExec) Next(ctx context.Context, chk *chunk.Chunk) (err error) {
+	log.Info("execute in DDLExec Next")
 	if e.done {
 		return nil
 	}
@@ -149,6 +150,7 @@ func (e *DDLExec) executeCreateDatabase(s *ast.CreateDatabaseStmt) error {
 }
 
 func (e *DDLExec) executeCreateTable(s *ast.CreateTableStmt) error {
+	log.Info("we just handle ast.CreateTableStmt to ddl module")
 	err := domain.GetDomain(e.ctx).DDL().CreateTable(e.ctx, s)
 	return errors.Trace(err)
 }

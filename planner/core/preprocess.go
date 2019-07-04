@@ -14,6 +14,7 @@
 package core
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 	"strings"
 
@@ -32,6 +33,7 @@ import (
 
 // Preprocess resolves table names of the node, and checks some statements validation.
 func Preprocess(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema, inPrepare bool) error {
+	logrus.Info("In preprocess, we check grammar in Enter and Leave methods by ast.Visitor interface ")
 	v := preprocessor{is: is, ctx: ctx, inPrepare: inPrepare, tableAliasInJoin: make([]map[string]interface{}, 0, 0)}
 	node.Accept(&v)
 	return errors.Trace(v.err)
@@ -262,6 +264,7 @@ func (p *preprocessor) checkDropDatabaseGrammar(stmt *ast.DropDatabaseStmt) {
 }
 
 func (p *preprocessor) checkCreateTableGrammar(stmt *ast.CreateTableStmt) {
+	logrus.Info("the detail of check we need to compare with logicals in ddl")
 	tName := stmt.Table.Name.String()
 	if isIncorrectName(tName) {
 		p.err = ddl.ErrWrongTableName.GenWithStackByArgs(tName)

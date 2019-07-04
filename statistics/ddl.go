@@ -15,7 +15,6 @@ package statistics
 
 import (
 	"fmt"
-
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/model"
 	"github.com/pingcap/parser/mysql"
@@ -23,6 +22,7 @@ import (
 	"github.com/pingcap/tidb/ddl/util"
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/sqlexec"
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -45,6 +45,7 @@ func (h *Handle) DDLEventCh() chan *util.Event {
 // insertTableStats2KV inserts a record standing for a new table to stats_meta and inserts some records standing for the
 // new columns and indices which belong to this table.
 func (h *Handle) insertTableStats2KV(info *model.TableInfo) (err error) {
+	logrus.Info("update table mysql.stats* from table: %s[%d]", info.Name.L, info.ID)
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	exec := h.mu.ctx.(sqlexec.SQLExecutor)

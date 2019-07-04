@@ -278,12 +278,15 @@ func (m *Meta) UpdateDatabase(dbInfo *model.DBInfo) error {
 func (m *Meta) CreateTable(dbID int64, tableInfo *model.TableInfo) error {
 	// Check if db exists.
 	dbKey := m.dbKey(dbID)
+	log.Infof("got db key: %s with prefix: %s, %d", string(dbKey), mDBPrefix, dbID)
+
 	if err := m.checkDBExists(dbKey); err != nil {
 		return errors.Trace(err)
 	}
 
 	// Check if table exists.
 	tableKey := m.tableKey(tableInfo.ID)
+	log.Infof("got table key: %s with prefix: %s, %d", string(tableKey), mTablePrefix, tableInfo.ID)
 	if err := m.checkTableNotExists(dbKey, tableKey); err != nil {
 		return errors.Trace(err)
 	}
@@ -293,6 +296,7 @@ func (m *Meta) CreateTable(dbID int64, tableInfo *model.TableInfo) error {
 		return errors.Trace(err)
 	}
 
+	log.Info("put tableInfo in tikv done")
 	return m.txn.HSet(dbKey, tableKey, data)
 }
 
@@ -474,6 +478,7 @@ func (m *Meta) enQueueDDLJob(key []byte, job *model.Job) error {
 	if err != nil {
 		return errors.Trace(err)
 	}
+	log.Infof("put job to queue: key: %s,  %s", string(key), job.Query)
 	return m.txn.RPush(key, b)
 }
 
@@ -555,6 +560,7 @@ func (m *Meta) UpdateDDLJob(index int64, job *model.Job, updateRawArgs bool, job
 	}
 
 	startTime := time.Now()
+	log.Infof("update ddl job: %s[%d] %s %s ?", job.Type, job.ID, job.State, job.Query)
 	err := m.updateDDLJob(index, job, listKey, updateRawArgs)
 	metrics.MetaHistogram.WithLabelValues(metrics.UpdateDDLJob, metrics.RetLabel(err)).Observe(time.Since(startTime).Seconds())
 	return errors.Trace(err)
@@ -652,6 +658,7 @@ func (m *Meta) getHistoryDDLJob(key []byte, id int64) (*model.Job, error) {
 
 // GetHistoryDDLJob gets a history DDL job.
 func (m *Meta) GetHistoryDDLJob(id int64) (*model.Job, error) {
+	log.Infof("try to get job from history queue with prefix: %s,id: %d", mDDLJobHistoryKey, id)
 	startTime := time.Now()
 	job, err := m.getHistoryDDLJob(mDDLJobHistoryKey, id)
 	metrics.MetaHistogram.WithLabelValues(metrics.GetHistoryDDLJob, metrics.RetLabel(err)).Observe(time.Since(startTime).Seconds())
@@ -779,6 +786,7 @@ func (m *Meta) tableStatsKey(tableID int64) []byte {
 }
 
 func (m *Meta) schemaDiffKey(schemaVersion int64) []byte {
+	log.Infof("gen schema diff key with prefix: %s,id[%d]", mSchemaDiffPrefix, schemaVersion)
 	return []byte(fmt.Sprintf("%s:%d", mSchemaDiffPrefix, schemaVersion))
 }
 
@@ -808,6 +816,7 @@ func (m *Meta) SetSchemaDiff(diff *model.SchemaDiff) error {
 	diffKey := m.schemaDiffKey(diff.Version)
 	startTime := time.Now()
 	err = m.txn.Set(diffKey, data)
+	log.Info("put schemaDiff to tikv, will be used in Domain")
 	metrics.MetaHistogram.WithLabelValues(metrics.SetSchemaDiff, metrics.RetLabel(err)).Observe(time.Since(startTime).Seconds())
 	return errors.Trace(err)
 }

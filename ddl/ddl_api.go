@@ -20,6 +20,7 @@ package ddl
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"strings"
 	"time"
 
@@ -852,6 +853,7 @@ func (d *ddl) CreateTableWithLike(ctx sessionctx.Context, ident, referIdent ast.
 }
 
 func (d *ddl) CreateTable(ctx sessionctx.Context, s *ast.CreateTableStmt) (err error) {
+	logrus.Info("check grammar again")
 	ident := ast.Ident{Schema: s.Table.Schema, Name: s.Table.Name}
 	if s.ReferTable != nil {
 		referIdent := ast.Ident{Schema: s.ReferTable.Schema, Name: s.ReferTable.Name}
@@ -901,11 +903,13 @@ func (d *ddl) CreateTable(ctx sessionctx.Context, s *ast.CreateTableStmt) (err e
 	}
 
 	tbInfo, err := buildTableInfo(ctx, d, ident.Name, cols, newConstraints)
+	logrus.Info("build TableInfo")
 	if err != nil {
 		return errors.Trace(err)
 	}
 
 	pi, err := buildTablePartitionInfo(ctx, d, s)
+	logrus.Info("build PartitionInfo")
 	if err != nil {
 		return errors.Trace(err)
 	}
@@ -948,6 +952,7 @@ func (d *ddl) CreateTable(ctx sessionctx.Context, s *ast.CreateTableStmt) (err e
 		BinlogInfo: &model.HistoryInfo{},
 		Args:       []interface{}{tbInfo},
 	}
+	logrus.Info("wrap TableInfo in Job")
 
 	err = handleTableOptions(s.Options, tbInfo)
 	if err != nil {

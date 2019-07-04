@@ -877,6 +877,7 @@ func (do *Domain) updateStatsWorker(ctx sessionctx.Context, owner owner.Manager)
 			return
 			// This channel is sent only by ddl owner.
 		case t := <-statsHandle.DDLEventCh():
+			log.Infof("got notified : %s", t)
 			err = statsHandle.HandleDDLEvent(t)
 			if err != nil {
 				log.Debug("[stats] handle ddl event fail: ", errors.ErrorStack(err))

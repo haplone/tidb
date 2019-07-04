@@ -39,6 +39,7 @@ func (p *LogicalTableDual) deriveStats() (*property.StatsInfo, error) {
 }
 
 func (p *baseLogicalPlan) deriveStats() (*property.StatsInfo, error) {
+	log.Info("use baseLogicalPlan to deriveStats")
 	if len(p.children) > 1 {
 		panic("LogicalPlans with more than one child should implement their own deriveStats().")
 	}

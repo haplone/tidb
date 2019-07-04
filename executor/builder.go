@@ -658,6 +658,7 @@ func (b *executorBuilder) buildDDL(v *plannercore.DDL) Executor {
 		stmt:         v.Statement,
 		is:           b.is,
 	}
+	log.Info("buildDDL use DDLExec to wrap core.DDL")
 	return e
 }
 

@@ -15,6 +15,7 @@ package executor
 
 import (
 	"fmt"
+	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -84,6 +85,7 @@ type baseExecutor struct {
 
 // Open initializes children recursively and "childrenResults" according to children's schemas.
 func (e *baseExecutor) Open(ctx context.Context) error {
+	log.Infof("use baseExecutor for Open : %s", reflect.TypeOf(e))
 	for _, child := range e.children {
 		err := child.Open(ctx)
 		if err != nil {

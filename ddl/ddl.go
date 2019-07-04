@@ -19,6 +19,7 @@ package ddl
 
 import (
 	"fmt"
+	"reflect"
 	"sync"
 	"time"
 
@@ -275,6 +276,7 @@ func (d *ddl) RegisterEventCh(ch chan<- *util.Event) {
 // asyncNotifyEvent will notify the ddl event to outside world, say statistic handle. When the channel is full, we may
 // give up notify and log it.
 func asyncNotifyEvent(d *ddlCtx, e *util.Event) {
+	log.Infof("notify job done: %s", e)
 	if d.ddlEventCh != nil {
 		if d.lease == 0 {
 			// If lease is 0, it's always used in test.
@@ -501,9 +503,11 @@ func (d *ddl) doDDLJob(ctx sessionctx.Context, job *model.Job) error {
 		metrics.JobsGauge.WithLabelValues(job.Type.String()).Dec()
 		metrics.HandleJobHistogram.WithLabelValues(job.Type.String(), metrics.RetLabel(err)).Observe(time.Since(startTime).Seconds())
 	}()
+	log.Info("we will wait the owner to finish the job")
 	for {
 		select {
 		case <-d.ddlJobDoneCh:
+			log.Info("got signal form ddlJobDoneCh")
 		case <-ticker.C:
 		}
 
@@ -519,6 +523,7 @@ func (d *ddl) doDDLJob(ctx sessionctx.Context, job *model.Job) error {
 		// If a job is a history job, the state must be JobSynced or JobCancel.
 		if historyJob.IsSynced() {
 			log.Infof("[ddl] DDL job ID:%d is finished", jobID)
+			log.Infof("job is synced, means every step has finished")
 			return nil
 		}
 
@@ -533,6 +538,7 @@ func (d *ddl) callHookOnChanged(err error) error {
 	d.mu.RLock()
 	defer d.mu.RUnlock()
 
+	log.Infof("callback hook on changed : %s", reflect.TypeOf(d.mu.hook))
 	err = d.mu.hook.OnChanged(err)
 	return errors.Trace(err)
 }

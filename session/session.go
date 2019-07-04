@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net"
+	"reflect"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -727,6 +728,7 @@ func (s *session) SetGlobalSysVar(name, value string) error {
 }
 
 func (s *session) ParseSQL(ctx context.Context, sql, charset, collation string) ([]ast.StmtNode, error) {
+	log.Info("convert sql[string] to sql[ast.CreateTableStmt] by yacc and lex")
 	s.parser.SetSQLMode(s.sessionVars.SQLMode)
 	return s.parser.Parse(sql, charset, collation)
 }
@@ -784,6 +786,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []sqlexec
 }
 
 func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec.RecordSet, err error) {
+	log.Infof("----------------------------------: %s", sql)
 	s.PrepareTxnCtx(ctx)
 	connID := s.sessionVars.ConnectionID
 	err = s.loadCommonGlobalVariablesIfNeeded()
@@ -806,6 +809,7 @@ func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec
 
 	compiler := executor.Compiler{Ctx: s}
 	for _, stmtNode := range stmtNodes {
+		log.Infof("the ast type is: %s", reflect.TypeOf(stmtNode))
 		s.PrepareTxnCtx(ctx)
 
 		// Step2: Transform abstract syntax tree to a physical plan(stored in executor.ExecStmt).
@@ -1363,6 +1367,7 @@ func (s *session) loadCommonGlobalVariablesIfNeeded() error {
 // PrepareTxnCtx starts a goroutine to begin a transaction if needed, and creates a new transaction context.
 // It is called before we execute a sql query.
 func (s *session) PrepareTxnCtx(ctx context.Context) {
+	log.Info("PrepareTxn 1. async get tso from pd, 2. get InfoSchema 3. prepare TransactionContext")
 	if s.txn.validOrPending() {
 		return
 	}
@@ -1444,6 +1449,7 @@ func logStmt(node ast.StmtNode, vars *variable.SessionVars) {
 		*ast.DropDatabaseStmt, *ast.DropIndexStmt, *ast.DropTableStmt, *ast.RenameTableStmt, *ast.TruncateTableStmt:
 		user := vars.User
 		schemaVersion := vars.TxnCtx.SchemaVersion
+		log.Info("we need to discuss schemaVersion later")
 		if ss, ok := node.(ast.SensitiveStmtNode); ok {
 			log.Infof("[CRUCIAL OPERATION] con:%d schema_ver:%d %s (by %s).", vars.ConnectionID, schemaVersion, ss.SecureText(), user)
 		} else {

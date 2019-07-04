@@ -14,7 +14,9 @@
 package core
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/model"
@@ -77,6 +79,7 @@ func (p *LogicalTableDual) findBestTask(prop *property.PhysicalProperty) (task, 
 
 // findBestTask implements LogicalPlan interface.
 func (p *baseLogicalPlan) findBestTask(prop *property.PhysicalProperty) (bestTask task, err error) {
+	logrus.Info("use baseLogicalPlan to findBestTask")
 	// Look up the task with this prop in the task map.
 	// It's used to reduce double counting.
 	bestTask = p.getTask(prop)
@@ -108,6 +111,7 @@ func (p *baseLogicalPlan) findBestTask(prop *property.PhysicalProperty) (bestTas
 		prop.Cols = []*expression.Column{}
 	}
 	physicalPlans := p.self.exhaustPhysicalPlans(prop)
+	logrus.Infof("get physicalPlans by %s", reflect.TypeOf(p.self))
 	prop.Cols = oldPropCols
 
 	for _, pp := range physicalPlans {

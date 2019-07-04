@@ -469,6 +469,7 @@ func (cc *clientConn) Run() {
 		}
 
 		startTime := time.Now()
+		log.Infof("get sql in byte from client: %s", string(data))
 		if err = cc.dispatch(data); err != nil {
 			if terror.ErrorEqual(err, io.EOF) {
 				cc.addMetrics(data[0], startTime, nil)
@@ -595,6 +596,7 @@ func (cc *clientConn) dispatch(data []byte) error {
 		span.Finish()
 	}()
 
+	log.Infof("try to dispatch sql by mysql protocol cmd: %s", mysql.Command2Str[cmd])
 	switch cmd {
 	case mysql.ComSleep:
 		// TODO: According to mysql document, this command is supposed to be used only internally.
@@ -865,6 +867,7 @@ func (cc *clientConn) handleLoadStats(ctx context.Context, loadStatsInfo *execut
 // There is a special query `load data` that does not return result, which is handled differently.
 // Query `load stats` does not return result either.
 func (cc *clientConn) handleQuery(ctx context.Context, sql string) (err error) {
+	log.Info("dispatched sql to handleQuery. In clientConn we write result back to client")
 	rs, err := cc.ctx.Execute(ctx, sql)
 	if err != nil {
 		metrics.ExecuteErrorCounter.WithLabelValues(metrics.ExecuteErrorToLabel(err)).Inc()

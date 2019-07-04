@@ -144,6 +144,7 @@ func runStmt(ctx context.Context, sctx sessionctx.Context, s sqlexec.Statement) 
 	var err error
 	var rs sqlexec.RecordSet
 	se := sctx.(*session)
+	log.Info("use sqlexec.Statement is to solve cycle dependency")
 	rs, err = s.Exec(ctx)
 	// All the history should be added here.
 	se.GetSessionVars().TxnCtx.StatementCount++

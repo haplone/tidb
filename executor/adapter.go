@@ -218,6 +218,7 @@ func (a *ExecStmt) Exec(ctx context.Context) (sqlexec.RecordSet, error) {
 		return nil, errors.Trace(err)
 	}
 
+	log.Info("use processinfoSetter to log sql, used by `show processinfo`")
 	var pi processinfoSetter
 	if raw, ok := sctx.(processinfoSetter); ok {
 		pi = raw
@@ -233,6 +234,7 @@ func (a *ExecStmt) Exec(ctx context.Context) (sqlexec.RecordSet, error) {
 	}
 	// If the executor doesn't return any result to the client, we execute it without delay.
 	if e.Schema().Len() == 0 {
+		log.Info("create table dose not return data, so execute it immediately")
 		return a.handleNoDelayExecutor(ctx, sctx, e, pi)
 	} else if proj, ok := e.(*ProjectionExec); ok && proj.calculateNoDelay {
 		// Currently this is only for the "DO" statement. Take "DO 1, @a=2;" as an example:

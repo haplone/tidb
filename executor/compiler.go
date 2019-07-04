@@ -15,6 +15,7 @@ package executor
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/pingcap/errors"
@@ -35,6 +36,7 @@ type Compiler struct {
 
 // Compile compiles an ast.StmtNode to a physical plan.
 func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStmt, error) {
+	log.Info("In Compiler we convert sql from ast.CreateTableStmt to DDLExec")
 	if span := opentracing.SpanFromContext(ctx); span != nil {
 		span1 := opentracing.StartSpan("executor.Compile", opentracing.ChildOf(span.Context()))
 		defer span1.Finish()
@@ -53,6 +55,7 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 	CountStmtNode(stmtNode, c.Ctx.GetSessionVars().InRestrictedSQL)
 	isExpensive := logExpensiveQuery(stmtNode, finalPlan)
 
+	log.Infof("the final plan type is: %s", reflect.TypeOf(finalPlan))
 	return &ExecStmt{
 		InfoSchema: infoSchema,
 		Plan:       finalPlan,

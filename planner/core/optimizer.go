@@ -15,6 +15,7 @@ package core
 
 import (
 	"math"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -23,6 +24,7 @@ import (
 	"github.com/pingcap/tidb/planner/property"
 	"github.com/pingcap/tidb/privilege"
 	"github.com/pingcap/tidb/sessionctx"
+	log "github.com/sirupsen/logrus"
 )
 
 // AllowCartesianProduct means whether tidb allows cartesian join without equal conditions.
@@ -60,6 +62,7 @@ type logicalOptRule interface {
 // Optimize does optimization and creates a Plan.
 // The node must be prepared first.
 func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (Plan, error) {
+	log.Info("step in optimize phase, but create table doesn't need it ")
 	fp := tryFastPlan(ctx, node)
 	if fp != nil {
 		return fp, nil
@@ -78,6 +81,7 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 
 	// Maybe it's better to move this to Preprocess, but check privilege need table
 	// information, which is collected into visitInfo during logical plan builder.
+	log.Info("use PrivilegeManager to check sql privilege")
 	if pm := privilege.GetPrivilegeManager(ctx); pm != nil {
 		if !checkPrivilege(pm, builder.visitInfo) {
 			return nil, errors.New("privilege check fail")
@@ -91,6 +95,7 @@ func Optimize(ctx sessionctx.Context, node ast.Node, is infoschema.InfoSchema) (
 		err := execPlan.optimizePreparedPlan(ctx, is)
 		return p, errors.Trace(err)
 	}
+	log.Infof("return %s by Optimize", reflect.TypeOf(p))
 	return p, nil
 }
 
@@ -142,8 +147,10 @@ func logicalOptimize(flag uint64, logic LogicalPlan) (LogicalPlan, error) {
 		// We use a bitmask to record which opt rules should be used. If the i-th bit is 1, it means we should
 		// apply i-th optimizing rule.
 		if flag&(1<<uint(i)) == 0 {
+			log.Infof("skip logicalOptimize: %s", reflect.TypeOf(rule))
 			continue
 		}
+		log.Infof("optimze by logicalOptimize: %s", reflect.TypeOf(rule))
 		logic, err = rule.optimize(logic)
 		if err != nil {
 			return nil, errors.Trace(err)

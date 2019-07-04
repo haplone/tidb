@@ -186,6 +186,7 @@ func buildJobDependence(t *meta.Meta, curJob *model.Job) error {
 
 // addDDLJob gets a global job ID and puts the DDL job in the DDL queue.
 func (d *ddl) addDDLJob(ctx sessionctx.Context, job *model.Job) error {
+	log.Info("add Job to tikv [normal job queue]. here is mock")
 	startTime := time.Now()
 	job.Version = currentVersion
 	job.Query, _ = ctx.Value(sessionctx.QueryString).(string)
@@ -193,6 +194,7 @@ func (d *ddl) addDDLJob(ctx sessionctx.Context, job *model.Job) error {
 		t := newMetaWithQueueTp(txn, job.Type.String())
 		var err error
 		job.ID, err = t.GenGlobalID()
+		log.Infof("fill global job id: %d", job.ID)
 		if err != nil {
 			return errors.Trace(err)
 		}
@@ -366,6 +368,7 @@ func (w *worker) handleDDLJobQueue(d *ddlCtx) error {
 				return nil
 			}
 
+			log.Infof("worker got job[%d], state: %s,query: %s", job.ID, job.State, job.Query)
 			if job.IsDone() || job.IsRollbackDone() {
 				binloginfo.SetDDLBinlog(d.binlogCli, txn, job.ID, job.Query)
 				if !job.IsRollbackDone() {
@@ -613,6 +616,7 @@ func (w *worker) waitSchemaSynced(d *ddlCtx, job *model.Job, waitTime time.Durat
 // updateSchemaVersion increments the schema version by 1 and sets SchemaDiff.
 func updateSchemaVersion(t *meta.Meta, job *model.Job) (int64, error) {
 	schemaVersion, err := t.GenSchemaVersion()
+	log.Infof("get new schemaVersion: %d", schemaVersion)
 	if err != nil {
 		return 0, errors.Trace(err)
 	}
@@ -637,6 +641,7 @@ func updateSchemaVersion(t *meta.Meta, job *model.Job) (int64, error) {
 	} else {
 		diff.TableID = job.TableID
 	}
+	log.Infof("create a SchemaDiff: [%d],%s, %d.%d to %d.%d", diff.Version, diff.Type, diff.OldSchemaID, diff.OldTableID, diff.SchemaID, diff.TableID)
 	err = t.SetSchemaDiff(diff)
 	return schemaVersion, errors.Trace(err)
 }

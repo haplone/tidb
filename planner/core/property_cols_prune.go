@@ -15,6 +15,7 @@ package core
 
 import (
 	"github.com/pingcap/tidb/expression"
+	"github.com/prometheus/common/log"
 )
 
 func (ds *DataSource) preparePossibleProperties() [][]*expression.Column {
@@ -70,6 +71,7 @@ func getPossiblePropertyFromByItems(items []*ByItems) []*expression.Column {
 }
 
 func (p *baseLogicalPlan) preparePossibleProperties() [][]*expression.Column {
+	log.Info("use baseLogicalPlan to preparePossibleProperties")
 	for _, ch := range p.children {
 		ch.preparePossibleProperties()
 	}
