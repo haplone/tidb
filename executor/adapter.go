@@ -15,7 +15,9 @@ package executor
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 	"strings"
 	"sync/atomic"
 	"time"
@@ -98,6 +100,7 @@ func schema2ResultFields(schema *expression.Schema, defaultDB string) (rfs []*as
 // next query.
 // If stmt is not nil and chunk with some rows inside, we simply update last query found rows by the number of row in chunk.
 func (a *recordSet) Next(ctx context.Context, chk *chunk.Chunk) error {
+	logrus.Info("recordSet#Next")
 	err := a.executor.Next(ctx, chk)
 	if err != nil {
 		a.lastErr = err
@@ -258,6 +261,8 @@ func (a *ExecStmt) Exec(ctx context.Context) (sqlexec.RecordSet, error) {
 	if txn.Valid() {
 		txnStartTS = txn.StartTS()
 	}
+
+	logrus.Info("return recordSet for ExecStmt#Exec")
 	return &recordSet{
 		executor:    e,
 		stmt:        a,
@@ -296,6 +301,7 @@ func (a *ExecStmt) handleNoDelayExecutor(ctx context.Context, sctx sessionctx.Co
 
 // buildExecutor build a executor from plan, prepared statement may need additional procedure.
 func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
+	logrus.Infof("buildExecutor for %s tp: %s", a.Text, reflect.TypeOf(a.Plan))
 	if _, ok := a.Plan.(*plannercore.Execute); !ok {
 		// Do not sync transaction for Execute statement, because the real optimization work is done in
 		// "ExecuteExec.Build".

@@ -138,10 +138,12 @@ func doOptimize(flag uint64, logic LogicalPlan) (PhysicalPlan, error) {
 		return nil, errors.Trace(ErrCartesianProductUnsupported)
 	}
 	physical, err := physicalOptimize(logic)
+	logrus.Infof("got physical plan: %s", reflect.TypeOf(physical))
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 	finalPlan := postOptimize(physical)
+	logrus.Infof("got physical plan2: %s", reflect.TypeOf(finalPlan))
 	return finalPlan, nil
 }
 

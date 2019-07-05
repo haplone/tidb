@@ -16,7 +16,9 @@ package core
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -180,6 +182,10 @@ func (p *LogicalJoin) attachOnConds(onConds []expression.Expression) {
 	p.EqualConditions = append(eq, p.EqualConditions...)
 	p.LeftConditions = append(left, p.LeftConditions...)
 	p.RightConditions = append(right, p.RightConditions...)
+	logrus.Info("append other condition for %s[%d]", p.tp, p.id)
+	for _, c := range other {
+		logrus.Infof("condition: %s %s", reflect.TypeOf(c), c)
+	}
 	p.OtherConditions = append(other, p.OtherConditions...)
 }
 

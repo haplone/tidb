@@ -19,6 +19,7 @@ import (
 	"github.com/pingcap/tidb/expression"
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/types"
+	"github.com/sirupsen/logrus"
 )
 
 type ppdSolver struct{}
@@ -209,6 +210,7 @@ func (p *LogicalJoin) updateEQCond() {
 			}
 		}
 		if need2Remove {
+			logrus.Info("remove eq condition")
 			p.OtherConditions = append(p.OtherConditions[:i], p.OtherConditions[i+1:]...)
 		}
 	}

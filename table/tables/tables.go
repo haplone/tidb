@@ -20,6 +20,7 @@ package tables
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ import (
 	"github.com/pingcap/tidb/util/codec"
 	"github.com/pingcap/tidb/util/kvcache"
 	"github.com/pingcap/tidb/util/logutil"
-	binlog "github.com/pingcap/tipb/go-binlog"
+	"github.com/pingcap/tipb/go-binlog"
 	"github.com/spaolacci/murmur3"
 	"go.uber.org/zap"
 	"golang.org/x/net/context"
@@ -598,6 +599,7 @@ func (t *tableCommon) addIndices(ctx sessionctx.Context, recordID int64, r []typ
 
 // RowWithCols implements table.Table RowWithCols interface.
 func (t *tableCommon) RowWithCols(ctx sessionctx.Context, h int64, cols []*table.Column) ([]types.Datum, error) {
+	logrus.Info("RowWithCols just one column a time????")
 	// Get raw row data from kv.
 	key := t.RecordKey(h)
 	txn, err := ctx.Txn(true)
@@ -962,6 +964,7 @@ func (t *tableCommon) RebaseAutoID(ctx sessionctx.Context, newBase int64, isSetS
 
 // Seek implements table.Table Seek interface.
 func (t *tableCommon) Seek(ctx sessionctx.Context, h int64) (int64, bool, error) {
+	logrus.Infof("tableCommon Seek for %d", h)
 	txn, err := ctx.Txn(true)
 	if err != nil {
 		return 0, false, errors.Trace(err)

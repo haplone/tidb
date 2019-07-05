@@ -28,7 +28,6 @@ import (
 	"github.com/pingcap/tidb/util/chunk"
 	"github.com/pingcap/tipb/go-tipb"
 	"github.com/sirupsen/logrus"
-	"reflect"
 )
 
 // baseBuiltinFunc will be contained in every struct that implement builtinFunc interface.
@@ -69,7 +68,7 @@ func newBaseBuiltinFuncWithTp(ctx sessionctx.Context, args []Expression, retType
 		panic("ctx should not be nil")
 	}
 	for i := range args {
-		logrus.Infof("arg type: %s", reflect.TypeOf(args[i]))
+		//logrus.Infof("arg type: %s", reflect.TypeOf(args[i]))
 		switch argTps[i] {
 		case types.ETInt:
 			args[i] = WrapWithCastAsInt(ctx, args[i])

@@ -16,6 +16,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sync/atomic"
 	"time"
 
@@ -75,6 +76,7 @@ type ProjectionExec struct {
 
 // Open implements the Executor Open interface.
 func (e *ProjectionExec) Open(ctx context.Context) error {
+	logrus.Infof("ProjectionExec#Open")
 	if err := e.baseExecutor.Open(ctx); err != nil {
 		return errors.Trace(err)
 	}
@@ -154,6 +156,7 @@ func (e *ProjectionExec) Open(ctx context.Context) error {
 //  +------------------------------+       +----------------------+
 //
 func (e *ProjectionExec) Next(ctx context.Context, chk *chunk.Chunk) error {
+	logrus.Info("ProjectionExec#Next")
 	if e.runtimeStats != nil {
 		start := time.Now()
 		defer func() { e.runtimeStats.Record(time.Now().Sub(start), chk.NumRows()) }()
@@ -182,6 +185,7 @@ func (e *ProjectionExec) unParallelExecute(ctx context.Context, chk *chunk.Chunk
 }
 
 func (e *ProjectionExec) parallelExecute(ctx context.Context, chk *chunk.Chunk) error {
+	logrus.Info("parallelExecute")
 	atomic.StoreInt64(&e.parentReqRows, int64(chk.RequiredRows()))
 	if !e.prepared {
 		e.prepare(ctx)
@@ -204,6 +208,7 @@ func (e *ProjectionExec) parallelExecute(ctx context.Context, chk *chunk.Chunk) 
 }
 
 func (e *ProjectionExec) prepare(ctx context.Context) {
+	logrus.Info("ProjectionExec#prepare")
 	e.finishCh = make(chan struct{})
 	e.outputCh = make(chan *projectionOutput, e.numWorkers)
 
@@ -295,13 +300,14 @@ func (f *projectionInputFetcher) run(ctx context.Context) {
 		if input == nil {
 			return
 		}
+		logrus.Info("get projection input")
 		targetWorker := input.targetWorker
 
 		output = readProjectionOutput(f.outputCh, f.globalFinishCh)
 		if output == nil {
 			return
 		}
-
+		logrus.Info("get projection output")
 		f.globalOutputCh <- output
 
 		requiredRows := atomic.LoadInt64(&f.proj.parentReqRows)
@@ -341,6 +347,7 @@ type projectionWorker struct {
 // It is finished and exited once:
 //   a. "ProjectionExec" closes the "globalFinishCh".
 func (w *projectionWorker) run(ctx context.Context) {
+	logrus.Info("projectionWorker run")
 	var output *projectionOutput
 	defer func() {
 		if r := recover(); r != nil {

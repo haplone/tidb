@@ -54,7 +54,7 @@ require (
 	github.com/pingcap/tipb v0.0.0-20180910045846-371b48b15d93
 	github.com/prometheus/client_golang v0.8.0
 	github.com/prometheus/client_model v0.0.0-20171117100541-99fa1f4be8e5
-	github.com/prometheus/common v0.0.0-20180426121432-d811d2e9bf89 // indirect
+	github.com/prometheus/common v0.0.0-20180426121432-d811d2e9bf89
 	github.com/prometheus/procfs v0.0.0-20180408092902-8b1c2da0d56d // indirect
 	github.com/sirupsen/logrus v0.0.0-20170323161349-3bcb09397d6d
 	github.com/spaolacci/murmur3 v0.0.0-20150829172844-0d12bf811670

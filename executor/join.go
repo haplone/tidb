@@ -14,6 +14,8 @@
 package executor
 
 import (
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -136,6 +138,7 @@ func (e *HashJoinExec) Close() error {
 
 // Open implements the Executor Open interface.
 func (e *HashJoinExec) Open(ctx context.Context) error {
+	logrus.Infof("HashJoinExec#Open")
 	if err := e.baseExecutor.Open(ctx); err != nil {
 		return errors.Trace(err)
 	}
@@ -252,6 +255,7 @@ func (e *HashJoinExec) wait4Inner() (finished bool, err error) {
 // fetchInnerRows fetches all rows from inner executor,
 // and append them to e.innerResult.
 func (e *HashJoinExec) fetchInnerRows(ctx context.Context, chkCh chan<- *chunk.Chunk, doneCh chan struct{}) {
+	logrus.Info("HashJoinExec fetchInnerRows")
 	defer close(chkCh)
 	e.innerResult = chunk.NewList(e.innerExec.retTypes(), e.initCap, e.maxChunkSize)
 	e.innerResult.GetMemTracker().AttachTo(e.memTracker)
@@ -268,6 +272,7 @@ func (e *HashJoinExec) fetchInnerRows(ctx context.Context, chkCh chan<- *chunk.C
 				return
 			}
 			chk := e.children[e.innerIdx].newFirstChunk()
+			logrus.Infof("innerExec: %s", reflect.TypeOf(e.innerExec))
 			err = e.innerExec.Next(ctx, chk)
 			if err != nil {
 				e.innerFinished <- errors.Trace(err)
@@ -494,6 +499,7 @@ func (e *HashJoinExec) join2Chunk(workerID uint, outerChk *chunk.Chunk, joinResu
 // step 1. fetch data from inner child and build a hash table;
 // step 2. fetch data from outer child in a background goroutine and probe the hash table in multiple join workers.
 func (e *HashJoinExec) Next(ctx context.Context, chk *chunk.Chunk) (err error) {
+	logrus.Info("HashJoinExec Next")
 	if e.runtimeStats != nil {
 		start := time.Now()
 		defer func() { e.runtimeStats.Record(time.Now().Sub(start), chk.NumRows()) }()

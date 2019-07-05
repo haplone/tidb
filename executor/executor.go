@@ -16,6 +16,8 @@ package executor
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -86,6 +88,7 @@ type baseExecutor struct {
 // Open initializes children recursively and "childrenResults" according to children's schemas.
 func (e *baseExecutor) Open(ctx context.Context) error {
 	for _, child := range e.children {
+		logrus.Infof("open %s", reflect.TypeOf(child))
 		err := child.Open(ctx)
 		if err != nil {
 			return errors.Trace(err)
@@ -965,6 +968,7 @@ func (e *TableScanExec) Next(ctx context.Context, chk *chunk.Chunk) error {
 		return errors.Trace(e.nextChunk4InfoSchema(ctx, chk))
 	}
 	handle, found, err := e.nextHandle()
+	logrus.Infof("got handle %d", handle)
 	if err != nil || !found {
 		return errors.Trace(err)
 	}
@@ -1031,11 +1035,13 @@ func (e *TableScanExec) getRow(handle int64) ([]types.Datum, error) {
 		return nil, errors.Trace(err)
 	}
 
+	logrus.Infof("got data in TableScanExec: %s", row)
 	return row, nil
 }
 
 // Open implements the Executor Open interface.
 func (e *TableScanExec) Open(ctx context.Context) error {
+	logrus.Info("open for TableScanExec")
 	e.iter = nil
 	e.virtualTableChunkList = nil
 	return nil

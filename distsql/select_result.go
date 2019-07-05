@@ -195,13 +195,13 @@ func (r *selectResult) getSelectResp() error {
 }
 
 func (r *selectResult) readRowsData(chk *chunk.Chunk) (err error) {
-	logrus.Infof("readRowsData")
+	//logrus.Infof("readRowsData")
 	rowsData := r.selectResp.Chunks[r.respChkIdx].RowsData
 	decoder := codec.NewDecoder(chk, r.ctx.GetSessionVars().Location())
 	for !chk.IsFull() && len(rowsData) > 0 {
 		for i := 0; i < r.rowLen; i++ {
 			rowsData, err = decoder.DecodeOne(rowsData, i, r.fieldTypes[i])
-			logrus.Infof("rowsData: %s", rowsData)
+			//logrus.Infof("rowsData: %s", rowsData)
 			if err != nil {
 				return errors.Trace(err)
 			}

@@ -13,12 +13,15 @@
 
 package chunk
 
+import "github.com/sirupsen/logrus"
+
 // CopySelectedJoinRows copies the selected joined rows from the source Chunk
 // to the destination Chunk.
 // Return true if at least one joined row was selected.
 //
 // NOTE: All the outer rows in the source Chunk should be the same.
 func CopySelectedJoinRows(src *Chunk, innerColOffset, outerColOffset int, selected []bool, dst *Chunk) bool {
+	logrus.Infof("------------ cp selected")
 	if src.NumRows() == 0 {
 		return false
 	}
@@ -33,6 +36,7 @@ func CopySelectedJoinRows(src *Chunk, innerColOffset, outerColOffset int, select
 // to the destination Chunk.
 // return the number of rows which is selected.
 func copySelectedInnerRows(innerColOffset, outerColOffset int, src *Chunk, selected []bool, dst *Chunk) int {
+	logrus.Infof("copySelectedInnerRows")
 	oldLen := dst.columns[innerColOffset].length
 	var srcCols []*column
 	if innerColOffset == 0 {
@@ -53,6 +57,7 @@ func copySelectedInnerRows(innerColOffset, outerColOffset int, src *Chunk, selec
 				elemLen := len(srcCol.elemBuf)
 				offset := i * elemLen
 				dstCol.data = append(dstCol.data, srcCol.data[offset:offset+elemLen]...)
+				logrus.Infof("data fixed: %s", srcCol.data[offset:offset+elemLen])
 			}
 		} else {
 			for i := 0; i < len(selected); i++ {
@@ -65,6 +70,7 @@ func copySelectedInnerRows(innerColOffset, outerColOffset int, src *Chunk, selec
 				start, end := srcCol.offsets[i], srcCol.offsets[i+1]
 				dstCol.data = append(dstCol.data, srcCol.data[start:end]...)
 				dstCol.offsets = append(dstCol.offsets, int64(len(dstCol.data)))
+				logrus.Infof("data: %s", srcCol.data[start:end])
 			}
 		}
 	}
@@ -74,6 +80,7 @@ func copySelectedInnerRows(innerColOffset, outerColOffset int, src *Chunk, selec
 // copyOuterRows copies the continuous 'numRows' outer rows in the source Chunk
 // to the destination Chunk.
 func copyOuterRows(innerColOffset, outerColOffset int, src *Chunk, numRows int, dst *Chunk) {
+	logrus.Infof("copyOuterRows")
 	if numRows <= 0 {
 		return
 	}

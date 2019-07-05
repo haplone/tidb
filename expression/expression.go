@@ -16,6 +16,8 @@ package expression
 import (
 	goJSON "encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -40,6 +42,7 @@ const (
 var EvalAstExpr func(ctx sessionctx.Context, expr ast.ExprNode) (types.Datum, error)
 
 // Expression represents all scalar expression in SQL.
+// four type: constant, scalar function(cast 123 as sig), column(select a from t1), correlate column (select a from a join t on a.=t.
 type Expression interface {
 	fmt.Stringer
 	goJSON.Marshaler
@@ -140,12 +143,15 @@ func IsEQCondFromIn(expr Expression) bool {
 // whether the result of the expression list is null, it can only be true when the
 // first returned values is false.
 func EvalBool(ctx sessionctx.Context, exprList CNFExprs, row chunk.Row) (bool, bool, error) {
+	logrus.Info("evalbool: ")
 	hasNull := false
 	for _, expr := range exprList {
+		logrus.Info("expr type: %s", reflect.TypeOf(expr))
 		data, err := expr.Eval(row)
 		if err != nil {
 			return false, false, err
 		}
+		logrus.Infof("data: %s", data)
 		if data.IsNull() {
 			// For queries like `select a in (select a from s where t.b = s.b) from t`,
 			// if result of `t.a = s.a` is null, we cannot return immediately until
@@ -153,8 +159,10 @@ func EvalBool(ctx sessionctx.Context, exprList CNFExprs, row chunk.Row) (bool, b
 			// subquery is empty, and we should return false as the result of the whole
 			// exprList in that case, instead of null.
 			if !IsEQCondFromIn(expr) {
+				logrus.Info("EvalBool !IsEQCondFromIn")
 				return false, false, nil
 			}
+			logrus.Info("EvalBool IsEQCondFromIn")
 			hasNull = true
 			continue
 		}

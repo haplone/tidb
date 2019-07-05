@@ -151,6 +151,7 @@ func (b *planBuilder) rewriteExprNode(rewriter *expressionRewriter, exprNode ast
 	return rewriter.ctxStack[0], rewriter.p, nil
 }
 
+// 视频35分钟
 type expressionRewriter struct {
 	ctxStack []expression.Expression
 	p        LogicalPlan
@@ -562,6 +563,7 @@ func (er *expressionRewriter) handleEQAll(lexpr, rexpr expression.Expression, np
 }
 
 func (er *expressionRewriter) handleExistSubquery(v *ast.ExistsSubqueryExpr) (ast.Node, bool) {
+	logrus.Info("handleExistSubquery")
 	subq, ok := v.Sel.(*ast.SubqueryExpr)
 	if !ok {
 		er.err = errors.Errorf("Unknown exists type %T.", v.Sel)
@@ -623,6 +625,7 @@ out:
 }
 
 func (er *expressionRewriter) handleInSubquery(v *ast.PatternInExpr) (ast.Node, bool) {
+	logrus.Info("handleInSubquery")
 	asScalar := er.asScalar
 	er.asScalar = true
 	v.Expr.Accept(er)

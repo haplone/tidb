@@ -120,7 +120,7 @@ func (e *TableReaderExecutor) Open(ctx context.Context) error {
 // Next fills data into the chunk passed by its caller.
 // The task was actually done by tableReaderHandler.
 func (e *TableReaderExecutor) Next(ctx context.Context, chk *chunk.Chunk) error {
-	logrus.Infof("next runtimeStats: %s", e.runtimeStats)
+	logrus.Infof("TableReaderExecutor next runtimeStats: %s", e.runtimeStats)
 	if e.runtimeStats != nil {
 		start := time.Now()
 		defer func() { e.runtimeStats.Record(time.Now().Sub(start), chk.NumRows()) }()
@@ -176,6 +176,7 @@ type tableResultHandler struct {
 }
 
 func (tr *tableResultHandler) open(optionalResult, result distsql.SelectResult) {
+	logrus.Info("tableResultHandler open")
 	if optionalResult == nil {
 		tr.optionalFinished = true
 		tr.result = result

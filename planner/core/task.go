@@ -15,6 +15,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/pingcap/parser/charset"
@@ -103,6 +104,7 @@ func attachPlan2Task(p PhysicalPlan, t task) task {
 
 // finishIndexPlan means we no longer add plan to index plan, and compute the network cost for it.
 func (t *copTask) finishIndexPlan() {
+	logrus.Info("finishIndexPlan ????")
 	if !t.indexPlanFinished {
 		t.cst += t.count() * netWorkFactor
 		t.indexPlanFinished = true
@@ -194,6 +196,7 @@ func (p *PhysicalMergeJoin) attach2Task(tasks ...task) task {
 
 // finishCopTask means we close the coprocessor task and create a root task.
 func finishCopTask(ctx sessionctx.Context, task task) task {
+	logrus.Info("finishCopTask")
 	t, ok := task.(*copTask)
 	if !ok {
 		return task
@@ -216,6 +219,7 @@ func finishCopTask(ctx sessionctx.Context, task task) task {
 		p.stats = t.indexPlan.statsInfo()
 		newTask.p = p
 	} else {
+		logrus.Info("new PhysicalTableReader")
 		p := PhysicalTableReader{tablePlan: t.tablePlan}.init(ctx)
 		p.stats = t.tablePlan.statsInfo()
 		newTask.p = p

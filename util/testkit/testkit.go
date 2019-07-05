@@ -16,6 +16,7 @@ package testkit
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"sort"
 	"strings"
 	"sync/atomic"
@@ -164,6 +165,7 @@ func (tk *TestKit) CheckExecResult(affectedRows, insertID int64) {
 
 // MustExec executes a sql statement and asserts nil error.
 func (tk *TestKit) MustExec(sql string, args ...interface{}) {
+	logrus.Infof("execute sql: %s", sql)
 	res, err := tk.Exec(sql, args...)
 	tk.c.Assert(err, check.IsNil, check.Commentf("sql:%s, %v, error stack %v", sql, args, errors.ErrorStack(err)))
 	if res != nil {

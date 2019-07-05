@@ -14,6 +14,8 @@
 package executor
 
 import (
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"time"
 
 	"github.com/pingcap/errors"
@@ -284,6 +286,7 @@ func (e *MergeJoinExec) Next(ctx context.Context, chk *chunk.Chunk) error {
 }
 
 func (e *MergeJoinExec) joinToChunk(ctx context.Context, chk *chunk.Chunk) (hasMore bool, err error) {
+	logrus.Infof("---MergeJoinExec joinToChunk joiner: %s", reflect.TypeOf(e.joiner))
 	for {
 		if e.outerTable.row == e.outerTable.iter.End() {
 			err = e.fetchNextOuterRows(ctx)

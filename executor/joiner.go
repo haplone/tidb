@@ -20,6 +20,7 @@ import (
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/chunk"
+	"github.com/sirupsen/logrus"
 )
 
 var (
@@ -93,6 +94,7 @@ type joiner interface {
 func newJoiner(ctx sessionctx.Context, joinType plannercore.JoinType,
 	outerIsRight bool, defaultInner []types.Datum, filter []expression.Expression,
 	lhsColTypes, rhsColTypes []*types.FieldType) joiner {
+	logrus.Infof("new joiner: %s", joinType)
 	base := baseJoiner{
 		ctx:          ctx,
 		conditions:   filter,
@@ -188,6 +190,7 @@ type semiJoiner struct {
 }
 
 func (j *semiJoiner) tryToMatch(outer chunk.Row, inners chunk.Iterator, chk *chunk.Chunk) (matched bool, hasNull bool, err error) {
+	logrus.Infof("semiJoiner tryToMatch inners: %d conditions: %d", inners.Len(), len(j.conditions))
 	if inners.Len() == 0 {
 		return false, false, nil
 	}
@@ -378,6 +381,9 @@ func (j *leftOuterJoiner) tryToMatch(outer chunk.Row, inners chunk.Iterator, chk
 	matched, err := j.filter(chkForJoin, chk, outer.Len())
 	if err != nil {
 		return false, false, errors.Trace(err)
+	}
+	if matched {
+		logrus.Infof("got row: %s", outer)
 	}
 	return matched, false, nil
 }

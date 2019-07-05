@@ -14,8 +14,11 @@
 package session_test
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/sirupsen/logrus"
+	"io"
+	"os"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -2444,4 +2447,149 @@ func (s *testSessionSuite) TestVariableExpr222(c *C) {
 	fmt.Printf("===================== %s \r\n", r.Rows()[0][0])
 	c.Fail()
 
+}
+
+var tbl1 string = `
+DROP TABLE IF EXISTS t1;
+CREATE TABLE t1 (
+  TABLE_CATALOG varchar(1000) DEFAULT NULL,
+  TABLE_SCHEMA varchar(1000) DEFAULT NULL,
+  TABLE_NAME varchar(1000) DEFAULT NULL,
+  NON_UNIQUE varchar(1000) DEFAULT NULL,
+  INDEX_SCHEMA varchar(1000) DEFAULT NULL,
+  INDEX_NAME varchar(1000) DEFAULT NULL,
+  SEQ_IN_INDEX bigint(2) DEFAULT NULL,
+  COLUMN_NAME varchar(1000) DEFAULT NULL,
+  COLLATION varchar(1000) DEFAULT NULL,
+  CARDINALITY bigint(21) DEFAULT NULL,
+  SUB_PART bigint(3) DEFAULT NULL,
+  PACKED varchar(1000) DEFAULT NULL,
+  NULLABLE varchar(1000) DEFAULT NULL,
+  INDEX_TYPE varchar(1000) DEFAULT NULL,
+  COMMENT varchar(1000) DEFAULT NULL,
+  INDEX_COMMENT varchar(1000) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;
+`
+
+var tbl2 string = `
+DROP TABLE IF EXISTS t2;
+CREATE TABLE t2 (
+  TABLE_CATALOG varchar(1000) DEFAULT NULL,
+  TABLE_SCHEMA varchar(1000) DEFAULT NULL,
+  TABLE_NAME varchar(1000) DEFAULT NULL,
+  NON_UNIQUE varchar(1000) DEFAULT NULL,
+  INDEX_SCHEMA varchar(1000) DEFAULT NULL,
+  INDEX_NAME varchar(1000) DEFAULT NULL,
+  SEQ_IN_INDEX bigint(2) DEFAULT NULL,
+  COLUMN_NAME varchar(1000) DEFAULT NULL,
+  COLLATION varchar(1000) DEFAULT NULL,
+  CARDINALITY bigint(21) DEFAULT NULL,
+  SUB_PART bigint(3) DEFAULT NULL,
+  PACKED varchar(1000) DEFAULT NULL,
+  NULLABLE varchar(1000) DEFAULT NULL,
+  INDEX_TYPE varchar(1000) DEFAULT NULL,
+  COMMENT varchar(1000) DEFAULT NULL,
+  INDEX_COMMENT varchar(1000) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COLLATE=utf8_general_ci;`
+
+var tsql string = `
+SELECT o.table_schema, o.table_name, o.index_name, o.s, n.index_name
+	, n.s
+FROM (
+	SELECT DISTINCT table_schema, table_name, index_name, GROUP_CONCAT(column_name) AS s
+	FROM t1
+	WHERE index_name != 'PRIMARY'
+	GROUP BY table_schema, table_name, index_name
+	ORDER BY table_schema, table_name, index_name
+) o
+	LEFT JOIN (
+		SELECT DISTINCT t.table_schema, t.table_name, t.index_name, GROUP_CONCAT(t.column_name) AS s
+		FROM t2 t
+		WHERE t.index_name != 'PRIMARY'
+		GROUP BY table_schema, table_name, index_name
+		ORDER BY table_schema, table_name, index_name
+	) n
+	ON (o.table_schema = n.TABLE_SCHEMA
+		AND o.table_name = n.TABLE_NAME
+		AND o.s = n.s)
+WHERE n.index_name IS NULL
+	AND o.table_name = 'streaming_customer_address_book'
+ORDER BY o.table_schema, o.table_name, o.index_name;
+`
+
+func (s *testSessionSuite) TestJoin222(c *C) {
+	c.Log("=====2===")
+	tk := testkit.NewTestKitWithInit(c, s.store)
+	tk.MustExec(tbl1)
+	tk.MustExec(tbl2)
+
+	files := []string{"/data/code/t1_insert.sql", "/data/code/t2_insert.sql"}
+
+	for _, fn := range files {
+		if f, err := os.Open(fn); err == nil {
+			ls := bufio.NewReader(f)
+			for {
+				l, _, err := ls.ReadLine()
+				if err == io.EOF {
+					break
+				}
+				tk.MustExec(string(l))
+			}
+		}
+	}
+
+	r := tk.MustQuery(tsql)
+
+	c.Assert(1, Equals, len(r.Rows()))
+
+	//c.Fail()
+}
+
+func (s *testSessionSuite) TestSelectIn(c *C) {
+	var sqls = `
+create table city (p_id varchar(128),city varchar(256));
+create table province (id int primary key,province varchar(256));
+
+insert into province(id,province) values(1,'北京'),(2,'浙江');
+insert into city(p_id,city) values(1,'东城'),(1,'西城');
+
+
+
+CREATE TABLE ljw_td_unionmodel_all (
+  id bigint(20) DEFAULT NULL,
+  request_id varchar(46) DEFAULT NULL,
+  batch_no varchar(128) DEFAULT NULL,
+  KEY request_id (request_id),
+
+
+CREATE TABLE tongdun_info (
+  id bigint(20) NOT NULL AUTO_INCREMENT COMMENT '主键',
+  request_id varchar(46) DEFAULT NULL COMMENT '进件号',
+  PRIMARY KEY (id),
+`
+
+	//insert into city (p_id,city,name) values('010','东城','a'),('010','西城','b'),('010','海淀','c'),('010','朝阳','d'),('010','石景山','e'),('010','昌平','f');
+	//insert into city (p_id,city) values('0571','杭州'),('0571','宁波'),('0571','嘉兴'),('0571','湖州'),('0571','温州');
+	//insert into city (p_id,city) values('0331','南京'),('0331','苏州'),('0331','徐州'),('0331','盐城');
+	tk := testkit.NewTestKitWithInit(c, s.store)
+	tk.MustExec(sqls)
+
+	//query := `select city ,name from city where p_id in ( select id from province)`
+	//query:= `select city from city c where exists ( select * from province p where p.id=c.p_id)`
+	query := `select id,province from province where id in (select p_id from city)`
+	query := `SELECT
+id
+,request_id
+FROM credit_query.tongdun_info
+WHERE id NOT IN (SELECT id FROM xd_policy.ljw_td_unionmodel_all)`
+
+	r := tk.MustQuery(query)
+
+	for _, l := range r.Rows() {
+		c.Error("=======-====-============")
+		c.Error(l[0])
+	}
+	logrus.Infof("result is %d", len(r.Rows()))
+
+	//tk.MustQuery(queryExist)
 }

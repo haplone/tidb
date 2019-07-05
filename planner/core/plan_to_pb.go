@@ -23,6 +23,7 @@ import (
 	"github.com/pingcap/tidb/tablecodec"
 	"github.com/pingcap/tidb/util/ranger"
 	"github.com/pingcap/tipb/go-tipb"
+	"github.com/sirupsen/logrus"
 )
 
 // ToPB implements PhysicalPlan ToPB interface.
@@ -89,6 +90,7 @@ func (p *PhysicalLimit) ToPB(ctx sessionctx.Context) (*tipb.Executor, error) {
 
 // ToPB implements PhysicalPlan ToPB interface.
 func (p *PhysicalTableScan) ToPB(ctx sessionctx.Context) (*tipb.Executor, error) {
+	logrus.Infof("convert PhysicalTableScan2PB[tipb.TableScan] for %s.%s", p.DBName.L, p.Table.Name.L)
 	columns := p.Columns
 	tsExec := &tipb.TableScan{
 		TableId: p.Table.ID,

@@ -16,7 +16,9 @@ package executor
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -69,6 +71,7 @@ func newExecutorBuilder(ctx sessionctx.Context, is infoschema.InfoSchema) *execu
 }
 
 func (b *executorBuilder) build(p plannercore.Plan) Executor {
+	logrus.Infof("type of plan is %s", reflect.TypeOf(p))
 	switch v := p.(type) {
 	case nil:
 		return nil
@@ -840,6 +843,7 @@ func (b *executorBuilder) buildMergeJoin(v *plannercore.PhysicalMergeJoin) Execu
 }
 
 func (b *executorBuilder) buildHashJoin(v *plannercore.PhysicalHashJoin) Executor {
+	logrus.Info("buildHashJoin")
 	leftHashKey := make([]*expression.Column, 0, len(v.EqualConditions))
 	rightHashKey := make([]*expression.Column, 0, len(v.EqualConditions))
 	for _, eqCond := range v.EqualConditions {
@@ -849,12 +853,14 @@ func (b *executorBuilder) buildHashJoin(v *plannercore.PhysicalHashJoin) Executo
 		rightHashKey = append(rightHashKey, rn)
 	}
 
+	logrus.Info("build left exec")
 	leftExec := b.build(v.Children()[0])
 	if b.err != nil {
 		b.err = errors.Trace(b.err)
 		return nil
 	}
 
+	logrus.Info("build right exec")
 	rightExec := b.build(v.Children()[1])
 	if b.err != nil {
 		b.err = errors.Trace(b.err)
@@ -867,6 +873,7 @@ func (b *executorBuilder) buildHashJoin(v *plannercore.PhysicalHashJoin) Executo
 		joinType:     v.JoinType,
 		innerIdx:     v.InnerChildIdx,
 	}
+	logrus.Infof("innerIdx is %d concurrency is %d", e.innerIdx, e.concurrency)
 
 	defaultValues := v.DefaultValues
 	lhsTypes, rhsTypes := leftExec.retTypes(), rightExec.retTypes()
@@ -1148,6 +1155,7 @@ func (b *executorBuilder) buildSelection(v *plannercore.PhysicalSelection) Execu
 }
 
 func (b *executorBuilder) buildProjection(v *plannercore.PhysicalProjection) Executor {
+	logrus.Info("buildProjection")
 	childExec := b.build(v.Children()[0])
 	if b.err != nil {
 		b.err = errors.Trace(b.err)
@@ -1518,6 +1526,7 @@ func (b *executorBuilder) buildAnalyze(v *plannercore.Analyze) Executor {
 }
 
 func constructDistExec(sctx sessionctx.Context, plans []plannercore.PhysicalPlan) ([]*tipb.Executor, bool, error) {
+	logrus.Info("constructDisExec")
 	streaming := true
 	executors := make([]*tipb.Executor, 0, len(plans))
 	for _, p := range plans {
@@ -1534,6 +1543,7 @@ func constructDistExec(sctx sessionctx.Context, plans []plannercore.PhysicalPlan
 }
 
 func (b *executorBuilder) constructDAGReq(plans []plannercore.PhysicalPlan) (dagReq *tipb.DAGRequest, streaming bool, err error) {
+	logrus.Info("constructDAGReq")
 	dagReq = &tipb.DAGRequest{}
 	dagReq.StartTs, err = b.getStartTS()
 	if err != nil {
@@ -1657,6 +1667,7 @@ func containsLimit(execs []*tipb.Executor) bool {
 }
 
 func buildNoRangeTableReader(b *executorBuilder, v *plannercore.PhysicalTableReader) (*TableReaderExecutor, error) {
+	logrus.Info("buildNoNoRangeTableReader")
 	dagReq, streaming, err := b.constructDAGReq(v.TablePlans)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -1697,7 +1708,9 @@ func buildNoRangeTableReader(b *executorBuilder, v *plannercore.PhysicalTableRea
 // buildTableReader builds a table reader executor. It first build a no range table reader,
 // and then update it ranges from table scan plan.
 func (b *executorBuilder) buildTableReader(v *plannercore.PhysicalTableReader) *TableReaderExecutor {
+	logrus.Info("buildTableReader")
 	ret, err := buildNoRangeTableReader(b, v)
+	//logrus.Info("")
 	if err != nil {
 		b.err = errors.Trace(err)
 		return nil

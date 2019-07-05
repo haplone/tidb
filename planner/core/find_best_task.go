@@ -16,6 +16,7 @@ package core
 import (
 	"github.com/sirupsen/logrus"
 	"math"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/model"
@@ -331,6 +332,7 @@ func (ds *DataSource) skylinePruning(prop *property.PhysicalProperty) []*candida
 // findBestTask implements the PhysicalPlan interface.
 // It will enumerate all the available indices and choose a plan with least cost.
 func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err error) {
+	logrus.Infof("findBestTask for %s.%s with prop", ds.DBName.L, ds.tableInfo.Name.L, prop)
 	// If ds is an inner plan in an IndexJoin, the IndexJoin will generate an inner plan by itself.
 	// So here we do nothing.
 	// TODO: Add a special prop to handle IndexJoin's inner plan.
@@ -341,6 +343,7 @@ func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err
 
 	t = ds.getTask(prop)
 	if t != nil {
+		logrus.Infof("got task: %s", reflect.TypeOf(t))
 		return
 	}
 
@@ -394,6 +397,7 @@ func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err
 		if len(path.ranges) == 0 && !ds.ctx.GetSessionVars().StmtCtx.UseCache {
 			dual := PhysicalTableDual{}.init(ds.ctx, ds.stats)
 			dual.SetSchema(ds.schema)
+			logrus.Info("return rootTask with dual")
 			return &rootTask{
 				p: dual,
 			}, nil
@@ -404,6 +408,7 @@ func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err
 				return nil, errors.Trace(err)
 			}
 			if tblTask.cost() < t.cost() {
+				logrus.Info("use the better task")
 				t = tblTask
 			}
 			continue
@@ -416,6 +421,8 @@ func (ds *DataSource) findBestTask(prop *property.PhysicalProperty) (t task, err
 			t = idxTask
 		}
 	}
+
+	logrus.Infof("[DS]return task is %s", reflect.TypeOf(t))
 	return
 }
 
@@ -626,7 +633,7 @@ func splitIndexFilterConditions(conditions []expression.Expression, indexColumns
 
 // convertToTableScan converts the DataSource to table scan.
 func (ds *DataSource) convertToTableScan(prop *property.PhysicalProperty, candidate *candidatePath) (task task, err error) {
-	logrus.Infof("try to convertToTableScan in DataSource for %s", candidate.path)
+	logrus.Infof("try to convertToTableScan in DataSource for %s with taskTp : %s", candidate.path, prop.TaskTp)
 	// It will be handled in convertToIndexScan.
 	if prop.TaskTp == property.CopDoubleReadTaskType {
 		return invalidTask, nil
@@ -693,6 +700,7 @@ func (ds *DataSource) convertToTableScan(prop *property.PhysicalProperty, candid
 	} else if _, ok := task.(*rootTask); ok {
 		return invalidTask, nil
 	}
+	logrus.Infof("the return task type is %s", reflect.TypeOf(task))
 	return task, nil
 }
 
