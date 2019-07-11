@@ -23,6 +23,7 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"strconv"
 	"strings"
@@ -2349,8 +2350,10 @@ func (b *builtinFieldIntSig) evalInt(row chunk.Row) (int64, bool, error) {
 	if isNull || err != nil {
 		return 0, err != nil, err
 	}
+	logrus.Infof("got int : %d", str)
 	for i, length := 1, len(b.args); i < length; i++ {
 		stri, isNull, err := b.args[i].EvalInt(b.ctx, row)
+		logrus.Infof("got int : %d to compare", stri)
 		if err != nil {
 			return 0, true, err
 		}

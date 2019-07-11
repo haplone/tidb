@@ -15,6 +15,8 @@ package expression
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
@@ -460,6 +462,7 @@ func GetRowLen(e Expression) int {
 	if f, ok := e.(*ScalarFunction); ok && f.FuncName.L == ast.RowFunc {
 		return len(f.GetArgs())
 	}
+	logrus.Infof(" %s not row", reflect.TypeOf(e))
 	return 1
 }
 

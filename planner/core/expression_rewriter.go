@@ -14,6 +14,8 @@
 package core
 
 import (
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -39,6 +41,7 @@ var EvalSubquery func(p PhysicalPlan, is infoschema.InfoSchema, ctx sessionctx.C
 
 // evalAstExpr evaluates ast expression directly.
 func evalAstExpr(ctx sessionctx.Context, expr ast.ExprNode) (types.Datum, error) {
+	logrus.Infof("expr type: %s", reflect.TypeOf(expr))
 	if val, ok := expr.(*driver.ValueExpr); ok {
 		return val.Datum, nil
 	}
@@ -135,6 +138,7 @@ func (b *PlanBuilder) getExpressionRewriter(p LogicalPlan) (rewriter *expression
 }
 
 func (b *PlanBuilder) rewriteExprNode(rewriter *expressionRewriter, exprNode ast.ExprNode, asScalar bool) (expression.Expression, LogicalPlan, error) {
+	logrus.Infof("start to rewrite %s", reflect.TypeOf(exprNode))
 	exprNode.Accept(rewriter)
 	if rewriter.err != nil {
 		return nil, nil, errors.Trace(rewriter.err)
@@ -250,6 +254,7 @@ func (er *expressionRewriter) buildSubquery(subq *ast.SubqueryExpr) (LogicalPlan
 
 // Enter implements Visitor interface.
 func (er *expressionRewriter) Enter(inNode ast.Node) (ast.Node, bool) {
+	logrus.Infof("expressionWriter enter %s", reflect.TypeOf(inNode))
 	switch v := inNode.(type) {
 	case *ast.AggregateFuncExpr:
 		index, ok := -1, false
@@ -272,10 +277,16 @@ func (er *expressionRewriter) Enter(inNode ast.Node) (ast.Node, bool) {
 	case *ast.ExistsSubqueryExpr:
 		return er.handleExistSubquery(v)
 	case *ast.PatternInExpr:
+		logrus.Infof("Expr type: %s", reflect.TypeOf(v.Expr))
+		for i, l := range v.List {
+			logrus.Infof("list[%d]: %s", i, reflect.TypeOf(l))
+		}
+		logrus.Infof("is not: %v", v.Not)
 		if v.Sel != nil {
 			return er.handleInSubquery(v)
 		}
 		if len(v.List) != 1 {
+			logrus.Info("do nothing , return ")
 			break
 		}
 		// For 10 in ((select * from t)), the parser won't set v.Sel.
@@ -312,7 +323,9 @@ func (er *expressionRewriter) Enter(inNode ast.Node) (ast.Node, bool) {
 			er.err = ErrUnknownColumn.GenWithStackByArgs(v.Column.Name.OrigColName(), "field list")
 			return inNode, false
 		}
+		logrus.Infof(" got column in ValueExpr: %s retType: %s", col, col.RetType)
 		er.ctxStack = append(er.ctxStack, expression.NewValuesFunc(er.ctx, col.Index, col.RetType))
+		logrus.Infof("got value func and put stack: %s", er.ctxStack[len(er.ctxStack)-1])
 		return inNode, true
 	case *ast.WindowFuncExpr:
 		return er.handleWindowFunction(v)
@@ -806,6 +819,7 @@ func (er *expressionRewriter) handleScalarSubquery(v *ast.SubqueryExpr) (ast.Nod
 
 // Leave implements Visitor interface.
 func (er *expressionRewriter) Leave(originInNode ast.Node) (retNode ast.Node, ok bool) {
+	logrus.Infof("expressionWriter leave %s", reflect.TypeOf(originInNode))
 	if er.err != nil {
 		return retNode, false
 	}
@@ -819,6 +833,7 @@ func (er *expressionRewriter) Leave(originInNode ast.Node) (retNode ast.Node, ok
 	case *driver.ValueExpr:
 		value := &expression.Constant{Value: v.Datum, RetType: &v.Type}
 		er.ctxStack = append(er.ctxStack, value)
+		logrus.Infof("got value and put stack: %s", value)
 	case *driver.ParamMarkerExpr:
 		var value expression.Expression
 		value, er.err = expression.GetParamExpression(er.ctx, v)
@@ -888,6 +903,7 @@ func (er *expressionRewriter) Leave(originInNode ast.Node) (retNode ast.Node, ok
 
 // newFunction chooses which expression.NewFunctionImpl() will be used.
 func (er *expressionRewriter) newFunction(funcName string, retType *types.FieldType, args ...expression.Expression) (expression.Expression, error) {
+	logrus.Infof("newFunction disableFoldCounter: %d funcName: %s, retType: %s ,len of args %d ", er.disableFoldCounter, funcName, retType, len(args))
 	if er.disableFoldCounter > 0 {
 		return expression.NewFunctionBase(er.ctx, funcName, retType, args...)
 	}
@@ -1079,6 +1095,7 @@ func (er *expressionRewriter) isTrueToScalarFunc(v *ast.IsTruthExpr) {
 // The argument not means if the expression is not in. The tp stands for the expression type, which is always bool.
 // a in (b, c, d) will be rewritten as `(a = b) or (a = c) or (a = d)`.
 func (er *expressionRewriter) inToExpression(lLen int, not bool, tp *types.FieldType) {
+	logrus.Infof("inToExpr: %d, %v, %s", lLen, not, tp)
 	stkLen := len(er.ctxStack)
 	l := expression.GetRowLen(er.ctxStack[stkLen-lLen-1])
 	for i := 0; i < lLen; i++ {
@@ -1088,16 +1105,19 @@ func (er *expressionRewriter) inToExpression(lLen int, not bool, tp *types.Field
 		}
 	}
 	args := er.ctxStack[stkLen-lLen-1:]
+	logrus.Infof("len of args: %d", len(args))
 	leftFt := args[0].GetType()
 	leftEt, leftIsNull := leftFt.EvalType(), leftFt.Tp == mysql.TypeNull
 	if leftIsNull {
 		er.ctxStack = er.ctxStack[:stkLen-lLen-1]
 		er.ctxStack = append(er.ctxStack, expression.Null.Clone())
+		logrus.Info("left is null, so we empty ctxStack, and fill expression.Null")
 		return
 	}
 	if leftEt == types.ETInt {
 		for i := 1; i < len(args); i++ {
 			if c, ok := args[i].(*expression.Constant); ok {
+				logrus.Info("refine compared constant")
 				args[i], _ = expression.RefineComparedConstant(er.ctx, mysql.HasUnsignedFlag(leftFt.Flag), c, opcode.EQ)
 			}
 		}

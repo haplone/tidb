@@ -14,6 +14,7 @@
 package expression
 
 import (
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/pingcap/parser/ast"
@@ -1116,6 +1117,7 @@ func RefineComparedConstant(ctx sessionctx.Context, isUnsigned bool, con *Consta
 		return con, false
 	}
 	if c == 0 {
+		logrus.Info("datum is equal")
 		return &Constant{
 			Value:        intDatum,
 			RetType:      intFieldType,

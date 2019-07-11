@@ -15,7 +15,6 @@ package core
 
 import (
 	"fmt"
-
 	. "github.com/pingcap/check"
 	"github.com/pingcap/parser"
 	"github.com/pingcap/parser/ast"
@@ -23,9 +22,11 @@ import (
 	"github.com/pingcap/parser/mysql"
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/types"
+	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/mock"
 	"github.com/pingcap/tidb/util/testleak"
 	"github.com/pingcap/tidb/util/testutil"
+	"github.com/sirupsen/logrus"
 )
 
 var _ = Suite(&testExpressionSuite{})
@@ -148,49 +149,60 @@ func (s *testExpressionSuite) TestCast(c *C) {
 	c.Assert(v.Kind(), Equals, types.KindNull)
 }
 
+func getLogFormatter() logrus.Formatter {
+	lf := logrus.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "15:04:05.000",
+		//DisableTimestamp: disableTimestamp,
+	}
+	return &lf
+}
+
 func (s *testExpressionSuite) TestPatternIn(c *C) {
+	logutil.InitLogger(logutil.NewLogConfig("debug", "15:04:05.000", "", logutil.FileLogConfig{}, false))
+
 	defer testleak.AfterTest(c)()
 	tests := []testCase{
 		{
 			exprStr:   "1 not in (1, 2, 3)",
 			resultStr: "0",
 		},
-		{
-			exprStr:   "1 in (1, 2, 3)",
-			resultStr: "1",
-		},
-		{
-			exprStr:   "1 in (2, 3)",
-			resultStr: "0",
-		},
-		{
-			exprStr:   "NULL in (2, 3)",
-			resultStr: "<nil>",
-		},
-		{
-			exprStr:   "NULL not in (2, 3)",
-			resultStr: "<nil>",
-		},
-		{
-			exprStr:   "NULL in (NULL, 3)",
-			resultStr: "<nil>",
-		},
-		{
-			exprStr:   "1 in (1, NULL)",
-			resultStr: "1",
-		},
-		{
-			exprStr:   "1 in (NULL, 1)",
-			resultStr: "1",
-		},
-		{
-			exprStr:   "2 in (1, NULL)",
-			resultStr: "<nil>",
-		},
-		{
-			exprStr:   "(-(23)++46/51*+51) in (+23)",
-			resultStr: "0",
-		},
+		//{
+		//	exprStr:   "1 in (1, 2, 3)",
+		//	resultStr: "1",
+		//},
+		//{
+		//	exprStr:   "1 in (2, 3)",
+		//	resultStr: "0",
+		//},
+		//{
+		//	exprStr:   "NULL in (2, 3)",
+		//	resultStr: "<nil>",
+		//},
+		//{
+		//	exprStr:   "NULL not in (2, 3)",
+		//	resultStr: "<nil>",
+		//},
+		//{
+		//	exprStr:   "NULL in (NULL, 3)",
+		//	resultStr: "<nil>",
+		//},
+		//{
+		//	exprStr:   "1 in (1, NULL)",
+		//	resultStr: "1",
+		//},
+		//{
+		//	exprStr:   "1 in (NULL, 1)",
+		//	resultStr: "1",
+		//},
+		//{
+		//	exprStr:   "2 in (1, NULL)",
+		//	resultStr: "<nil>",
+		//},
+		//{
+		//	exprStr:   "(-(23)++46/51*+51) in (+23)",
+		//	resultStr: "0",
+		//},
 	}
 	s.runTests(c, tests)
 }

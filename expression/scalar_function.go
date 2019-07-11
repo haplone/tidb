@@ -16,6 +16,8 @@ package expression
 import (
 	"bytes"
 	"fmt"
+	"github.com/sirupsen/logrus"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -82,6 +84,7 @@ func newFunctionImpl(ctx sessionctx.Context, fold bool, funcName string, retType
 	if !ok {
 		return nil, errFunctionNotExists.GenWithStackByArgs("FUNCTION", funcName)
 	}
+	logrus.Infof("get func class %s by name %s", reflect.TypeOf(fc), funcName)
 	funcArgs := make([]Expression, len(args))
 	copy(funcArgs, args)
 	f, err := fc.getFunction(ctx, funcArgs)
@@ -90,6 +93,7 @@ func newFunctionImpl(ctx sessionctx.Context, fold bool, funcName string, retType
 	}
 	if builtinRetTp := f.getRetTp(); builtinRetTp.Tp != mysql.TypeUnspecified || retType.Tp == mysql.TypeUnspecified {
 		retType = builtinRetTp
+		logrus.Infof("change return type from unspecified to %s", retType)
 	}
 	sf := &ScalarFunction{
 		FuncName: model.NewCIStr(funcName),
@@ -175,6 +179,7 @@ func (sf *ScalarFunction) Decorrelate(schema *Schema) Expression {
 
 // Eval implements Expression interface.
 func (sf *ScalarFunction) Eval(row chunk.Row) (d types.Datum, err error) {
+	logrus.Info("ScalarFunction Eval eval type: %d", sf.GetType().EvalType())
 	var (
 		res    interface{}
 		isNull bool
@@ -183,6 +188,7 @@ func (sf *ScalarFunction) Eval(row chunk.Row) (d types.Datum, err error) {
 	case types.ETInt:
 		var intRes int64
 		intRes, isNull, err = sf.EvalInt(sf.GetCtx(), row)
+		logrus.Infof("is in ? %d", intRes)
 		if mysql.HasUnsignedFlag(tp.Flag) {
 			res = uint64(intRes)
 		} else {
@@ -212,6 +218,7 @@ func (sf *ScalarFunction) Eval(row chunk.Row) (d types.Datum, err error) {
 
 // EvalInt implements Expression interface.
 func (sf *ScalarFunction) EvalInt(ctx sessionctx.Context, row chunk.Row) (int64, bool, error) {
+	logrus.Infof("EvalInt %s", reflect.TypeOf(sf.Function))
 	return sf.Function.evalInt(row)
 }
 

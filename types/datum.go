@@ -16,6 +16,7 @@ package types
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 	"sort"
 	"strconv"
@@ -680,6 +681,7 @@ func (d *Datum) compareMysqlTime(sc *stmtctx.StatementContext, time Time) (int, 
 
 // ConvertTo converts a datum to the target field type.
 func (d *Datum) ConvertTo(sc *stmtctx.StatementContext, target *FieldType) (Datum, error) {
+	logrus.Infof("convert datum from %s to %s", d, target)
 	if d.k == KindNull {
 		return Datum{}, nil
 	}

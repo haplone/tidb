@@ -14,6 +14,8 @@
 package expression
 
 import (
+	"github.com/sirupsen/logrus"
+	"reflect"
 	"strings"
 
 	"github.com/pingcap/errors"
@@ -99,6 +101,7 @@ func (c *inFunctionClass) getFunction(ctx sessionctx.Context, args []Expression)
 		sig = &builtinInJSONSig{baseBuiltinFunc: bf}
 		sig.setPbCode(tipb.ScalarFuncSig_InJson)
 	}
+	logrus.Infof("get builtin func %s", reflect.TypeOf(sig))
 	return sig, nil
 }
 
@@ -478,6 +481,7 @@ func (c *valuesFunctionClass) getFunction(ctx sessionctx.Context, args []Express
 	}
 	bf := newBaseBuiltinFunc(ctx, args)
 	bf.tp = c.tp
+	logrus.Infof("eval type is: %s", bf.tp.EvalType())
 	switch c.tp.EvalType() {
 	case types.ETInt:
 		sig = &builtinValuesIntSig{bf, c.offset}

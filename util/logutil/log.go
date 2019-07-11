@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	defaultLogTimeFormat = "2006/01/02 15:04:05.000"
+	defaultLogTimeFormat = "15:04:05.000"
 	// DefaultLogMaxSize is the default size of log files.
 	DefaultLogMaxSize = 300 // MB
 	// DefaultLogFormat is the default format of the log.

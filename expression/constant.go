@@ -16,6 +16,7 @@ package expression
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/pingcap/parser/mysql"
 	"github.com/pingcap/parser/terror"
@@ -107,6 +108,8 @@ func (c *Constant) Eval(_ chunk.Row) (types.Datum, error) {
 			}
 			c.Value.SetValue(val.GetValue())
 		}
+	} else {
+		logrus.Info("defer expr is nil")
 	}
 	return c.Value, nil
 }
