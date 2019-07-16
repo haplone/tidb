@@ -15,6 +15,7 @@ package expression
 
 import (
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"math"
 
 	"github.com/pingcap/parser/mysql"
@@ -612,6 +613,7 @@ func (b *builtinUnaryNotSig) evalInt(row chunk.Row) (int64, bool, error) {
 		return 0, isNull, err
 	}
 	if arg != 0 {
+		logrus.Infof("arg is %s", arg)
 		return 0, false, nil
 	}
 	return 1, false, nil

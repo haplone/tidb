@@ -1117,7 +1117,7 @@ func RefineComparedConstant(ctx sessionctx.Context, isUnsigned bool, con *Consta
 		return con, false
 	}
 	if c == 0 {
-		logrus.Info("datum is equal")
+		logrus.Infof("datum is equal for %s", con.String())
 		return &Constant{
 			Value:        intDatum,
 			RetType:      intFieldType,

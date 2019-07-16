@@ -179,7 +179,7 @@ func (sf *ScalarFunction) Decorrelate(schema *Schema) Expression {
 
 // Eval implements Expression interface.
 func (sf *ScalarFunction) Eval(row chunk.Row) (d types.Datum, err error) {
-	logrus.Info("ScalarFunction Eval eval type: %d", sf.GetType().EvalType())
+	logrus.Info("ScalarFunction Eval eval type: %s", sf.GetType().EvalType())
 	var (
 		res    interface{}
 		isNull bool

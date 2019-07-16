@@ -334,6 +334,7 @@ func (er *expressionRewriter) Enter(inNode ast.Node) (ast.Node, bool) {
 			er.disableFoldCounter++
 		}
 	default:
+		logrus.Info("default")
 		er.asScalar = true
 	}
 	return inNode, false
@@ -1154,6 +1155,10 @@ func (er *expressionRewriter) inToExpression(lLen int, not bool, tp *types.Field
 	}
 	er.ctxStack = er.ctxStack[:stkLen-lLen-1]
 	er.ctxStack = append(er.ctxStack, function)
+	logrus.Infof("ctxStack")
+	for _, cs := range er.ctxStack {
+		logrus.Infof("-- type: %s , %s", reflect.TypeOf(cs), cs)
+	}
 }
 
 func (er *expressionRewriter) caseToExpression(v *ast.CaseExpr) {
