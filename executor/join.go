@@ -38,6 +38,13 @@ var (
 )
 
 // HashJoinExec implements the hash join algorithm.
+// 1. Main Thread，一个，执行下列任务：
+//  	读取所有的 Inner 表数据；
+//  	根据 Inner 表数据构造哈希表；
+//  	启动 Outer Fetcher 和 Join Worker 开始后台工作，生成 Join 结果，各个 goroutine 的启动过程由 fetchOuterAndProbeHashTable 这个函数完成；
+//  	将 Join Worker 计算出的 Join 结果返回给 NextChunk 接口的调用方法。
+//  2. Outer Fetcher，一个，负责读取 Outer 表的数据并分发给各个 Join Worker；
+//  3. Join Worker，多个，负责查哈希表、Join 匹配的 Inner 和 Outer 表的数据，并把结果传递给 Main Thread。
 type HashJoinExec struct {
 	baseExecutor
 
