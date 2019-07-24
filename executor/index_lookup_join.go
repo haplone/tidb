@@ -48,6 +48,7 @@ var _ Executor = &IndexLookUpJoin{}
 // 2. The innerWorker receives the task, builds key ranges from outer rows and fetch inner rows, builds inner row hash map.
 // 3. main thread receives the task, waits for inner worker finish handling the task.
 // 4. main thread join each outer row by look up the inner rows hash map in the task.
+// https://zhuanlan.zhihu.com/p/38572730
 type IndexLookUpJoin struct {
 	baseExecutor
 

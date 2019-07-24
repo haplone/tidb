@@ -45,6 +45,7 @@ var (
 //  	将 Join Worker 计算出的 Join 结果返回给 NextChunk 接口的调用方法。
 //  2. Outer Fetcher，一个，负责读取 Outer 表的数据并分发给各个 Join Worker；
 //  3. Join Worker，多个，负责查哈希表、Join 匹配的 Inner 和 Outer 表的数据，并把结果传递给 Main Thread。
+// https://zhuanlan.zhihu.com/p/37773956
 type HashJoinExec struct {
 	baseExecutor
 
@@ -193,6 +194,14 @@ func (e *HashJoinExec) getJoinKeyFromChkRow(isOuterKey bool, row chunk.Row, keyB
 
 // fetchOuterChunks get chunks from fetches chunks from the big table in a background goroutine
 // and sends the chunks to multiple channels which will be read by multiple join workers.
+// Outer Fetcher 是一个后台 goroutine，他的主要计算逻辑在 fetchOuterChunks 这个函数中。
+//	它会不断的读大表的数据，并将获得的 Outer 表的数据分发给各个 Join Worker。
+//	涉及到了两个 channel：
+//		* outerResultChs[i]：每个 Join Worker 一个，Outer Fetcher 将获取到的 Outer Chunk 放到这个 channel 中供相应的 Join Worker 使用；
+//		* outerChkResourceCh：当 Join Worker 用完了当前的 Outer Chunk 后，
+//		它需要把这个 Chunk 以及自己对应的 outerResultChs[i] 的地址一起写入到 outerChkResourceCh 这个 channel 中，告诉 Outer Fetcher 两个信息：
+//		- 我提供了一个 Chunk 给你，你直接用这个 Chunk 去拉 Outer 数据吧，不用再重新申请内存了；
+//		- 我的 Outer Chunk 已经用完了，你需要把拉取到的 Outer 数据直接传给我，不要给别人了。
 func (e *HashJoinExec) fetchOuterChunks(ctx context.Context) {
 	hasWaitedForInner := false
 	for {
@@ -205,6 +214,7 @@ func (e *HashJoinExec) fetchOuterChunks(ctx context.Context) {
 		case <-e.closeCh:
 			return
 		case outerResource, ok = <-e.outerChkResourceCh:
+			// get chk for workload
 			if !ok {
 				return
 			}
@@ -258,6 +268,8 @@ func (e *HashJoinExec) wait4Inner() (finished bool, err error) {
 
 // fetchInnerRows fetches all rows from inner executor,
 // and append them to e.innerResult.
+// 读 Inner 表数据的过程由 fetchInnerRows 这个函数完成。
+// 这个过程会不断调用 Child 的 NextChunk 接口，把每次函数调用所获取的 Chunk 存储到 innerResult 这个 List 中供接下来的计算使用。
 func (e *HashJoinExec) fetchInnerRows(ctx context.Context, chkCh chan<- *chunk.Chunk, doneCh chan struct{}) {
 	defer close(chkCh)
 	e.innerResult = chunk.NewList(e.innerExec.retTypes(), e.initCap, e.maxChunkSize)
@@ -555,6 +567,16 @@ func (e *HashJoinExec) fetchInnerAndBuildHashTable(ctx context.Context) {
 // buildHashTableForList builds hash table from `list`.
 // key of hash table: hash value of key columns
 // value of hash table: RowPtr of the corresponded row
+// 构造哈希表的过程由 buildHashTableForList 这个函数完成。
+//
+// 我们这里使用的哈希表（存储在变量 hashTable 中）本质上是一个 MVMap。
+// 		MVMap 的 Key 和 Value 都是 []byte 类型的数据，和普通 map 不同的是，MVMap 允许一个 Key 拥有多个 Value。
+// 		这个特性对于 Hash Join 来说非常方便和实用，因为表中同一个 Join Key 可能对应多行数据。
+//
+// 构造哈希表的过程中，我们会遍历 Inner 表的每行数据（上文提到，此时所有的数据都已经存储在了 innerResult 中），对每行数据做如下操作：
+//		* 计算该行数据的 Join Key，得到一个 []byte，它将作为 MVMap 的 Key；
+//		* 计算该行数据的位置信息，得到另一个 []byte，它将作为 MVMap 的 Value；
+//		* 将这个 (Key, Value) 放入 MVMap 中。
 func (e *HashJoinExec) buildHashTableForList(innerResultCh chan *chunk.Chunk) error {
 	e.hashTable = mvmap.NewMVMap()
 	e.innerKeyColIdx = make([]int, len(e.innerKeys))
@@ -579,6 +601,7 @@ func (e *HashJoinExec) buildHashTableForList(innerResultCh chan *chunk.Chunk) er
 			if err != nil {
 				return errors.Trace(err)
 			}
+			// 内表join key 上有任意列是null，不计入结果
 			if hasNull {
 				continue
 			}
