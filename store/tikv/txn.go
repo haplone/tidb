@@ -196,6 +196,9 @@ func (txn *tikvTxn) DelOption(opt kv.Option) {
 	txn.us.DelOption(opt)
 }
 
+// toDo mass insert we could :
+//  1. iter datas here
+//  split region here
 func (txn *tikvTxn) Commit(ctx context.Context) error {
 	if !txn.valid {
 		return kv.ErrInvalidTxn

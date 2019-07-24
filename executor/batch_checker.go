@@ -24,6 +24,7 @@ import (
 	"github.com/pingcap/tidb/tablecodec"
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/chunk"
+	"github.com/sirupsen/logrus"
 )
 
 type keyValue struct {
@@ -188,6 +189,7 @@ func (b *batchChecker) getKeysNeedCheckOneRow(ctx sessionctx.Context, t table.Ta
 
 // batchGetInsertKeys uses batch-get to fetch all key-value pairs to be checked for ignore or duplicate key update.
 func (b *batchChecker) batchGetInsertKeys(ctx sessionctx.Context, t table.Table, newRows [][]types.Datum) (err error) {
+	logrus.Info("--==-- batchGetInsertKey should optimize")
 	// Get keys need to be checked.
 	b.toBeCheckedRows, err = b.getKeysNeedCheck(ctx, t, newRows)
 	if err != nil {

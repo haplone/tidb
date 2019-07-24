@@ -279,6 +279,7 @@ type SessionVars struct {
 	SQLMode mysql.SQLMode
 
 	/* TiDB system variables */
+	// toDo add massInsertMode
 
 	// LightningMode is true when the lightning use the kvencoder to transfer sql to raw kv.
 	LightningMode bool

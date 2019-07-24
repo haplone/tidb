@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/sirupsen/logrus"
 	"net"
 	"strings"
 	"sync"
@@ -855,6 +856,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []sqlexec
 }
 
 func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec.RecordSet, err error) {
+	logrus.Infof("-------------execute sql: %s", sql)
 	s.PrepareTxnCtx(ctx)
 	connID := s.sessionVars.ConnectionID
 	err = s.loadCommonGlobalVariablesIfNeeded()

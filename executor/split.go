@@ -34,6 +34,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// toDo mass insert need to use this
 // SplitIndexRegionExec represents a split index regions executor.
 type SplitIndexRegionExec struct {
 	baseExecutor

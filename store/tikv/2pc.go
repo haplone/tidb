@@ -88,6 +88,7 @@ type twoPhaseCommitter struct {
 }
 
 // newTwoPhaseCommitter creates a twoPhaseCommitter.
+// toDo create a lot of committers for mass insert
 func newTwoPhaseCommitter(txn *tikvTxn, connID uint64) (*twoPhaseCommitter, error) {
 	var (
 		keys    [][]byte

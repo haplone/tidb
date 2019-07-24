@@ -29,6 +29,7 @@ import (
 
 // SplitRegion splits the region contains splitKey into 2 regions: [start,
 // splitKey) and [splitKey, end).
+// toDo before mass insert data, we need to split region
 func (s *tikvStore) SplitRegion(splitKey kv.Key) error {
 	_, err := s.splitRegion(splitKey)
 	return err

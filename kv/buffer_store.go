@@ -18,6 +18,7 @@ import (
 )
 
 var (
+	// toDo add mass insert cap
 	// DefaultTxnMembufCap is the default transaction membuf capability.
 	DefaultTxnMembufCap = 4 * 1024
 	// ImportingTxnMembufCap is the capability of tidb importing data situation.

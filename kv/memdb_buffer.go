@@ -27,6 +27,7 @@ import (
 	"github.com/pingcap/parser/terror"
 )
 
+// toDo mass insert
 // memDbBuffer implements the MemBuffer interface.
 type memDbBuffer struct {
 	db              *memdb.DB
