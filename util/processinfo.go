@@ -14,7 +14,12 @@
 package util
 
 import (
+	"context"
 	"fmt"
+	"github.com/pingcap/parser/ast"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
+	"reflect"
 	"time"
 
 	"github.com/pingcap/parser/mysql"
@@ -73,4 +78,28 @@ type SessionManager interface {
 	// ShowProcessList returns map[connectionID]ProcessInfo
 	ShowProcessList() map[uint64]*ProcessInfo
 	Kill(connectionID uint64, query bool)
+}
+
+type AstVisitor struct {
+	ctx context.Context
+}
+
+func IterAst(n ast.Node) {
+	v := AstVisitor{ctx: context.Background()}
+	n.Accept(v)
+}
+
+func (v AstVisitor) Enter(n ast.Node) (node ast.Node, skipChildren bool) {
+	logutil.Logger(v.ctx).Info("enter ", zap.String("node", reflect.TypeOf(n).String()))
+	switch n := n.(type) {
+	case *ast.TableName:
+		logutil.Logger(v.ctx).Info("table", zap.String("db", n.Schema.L), zap.String("tbl", n.Name.L))
+	case *ast.ColumnName:
+		logutil.Logger(v.ctx).Info("column", zap.String("column", n.Name.L))
+	}
+	return n, false
+}
+func (v AstVisitor) Leave(n ast.Node) (node ast.Node, ok bool) {
+	logutil.Logger(v.ctx).Info("leave ", zap.String("node", reflect.TypeOf(n).String()))
+	return n, true
 }

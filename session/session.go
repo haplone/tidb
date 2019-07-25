@@ -855,6 +855,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []sqlexec
 }
 
 func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec.RecordSet, err error) {
+	logutil.Logger(ctx).Info(" ---------- execute sql: ", zap.String("sql", sql))
 	s.PrepareTxnCtx(ctx)
 	connID := s.sessionVars.ConnectionID
 	err = s.loadCommonGlobalVariablesIfNeeded()
@@ -886,6 +887,9 @@ func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec
 		// Some executions are done in compile stage, so we reset them before compile.
 		if err := executor.ResetContextOfStmt(s, stmtNode); err != nil {
 			return nil, errors.Trace(err)
+		}
+		if strings.Contains(sql, "t1") {
+			util.IterAst(stmtNode)
 		}
 		stmt, err := compiler.Compile(ctx, stmtNode)
 		if err != nil {
