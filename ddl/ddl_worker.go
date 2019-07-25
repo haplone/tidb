@@ -109,12 +109,12 @@ func (w *worker) String() string {
 }
 
 func (w *worker) close() {
-	startTime := time.Now()
+	//startTime := time.Now()
 	close(w.quitCh)
 	w.delRangeManager.clear()
 	w.sessPool.close()
 	w.wg.Wait()
-	logutil.Logger(w.logCtx).Info("[ddl] DDL worker closed", zap.Duration("take time", time.Since(startTime)))
+	//logutil.Logger(w.logCtx).Info("[ddl] DDL worker closed", zap.Duration("take time", time.Since(startTime)))
 }
 
 // start is used for async online schema changing, it will try to become the owner firstly,
@@ -305,7 +305,7 @@ func (w *worker) finishDDLJob(t *meta.Meta, job *model.Job) (err error) {
 	}
 
 	job.BinlogInfo.FinishedTS = t.StartTS
-	logutil.Logger(w.logCtx).Info("[ddl] finish DDL job", zap.String("job", job.String()))
+	//logutil.Logger(w.logCtx).Info("[ddl] finish DDL job", zap.String("job", job.String()))
 	err = t.AddHistoryDDLJob(job)
 	return errors.Trace(err)
 }
@@ -458,7 +458,7 @@ func chooseLeaseTime(t, max time.Duration) time.Duration {
 
 // runDDLJob runs a DDL job. It returns the current schema version in this transaction and the error.
 func (w *worker) runDDLJob(d *ddlCtx, t *meta.Meta, job *model.Job) (ver int64, err error) {
-	logutil.Logger(w.logCtx).Info("[ddl] run DDL job", zap.String("job", job.String()))
+	//logutil.Logger(w.logCtx).Info("[ddl] run DDL job", zap.String("job", job.String()))
 	timeStart := time.Now()
 	defer func() {
 		metrics.DDLWorkerHistogram.WithLabelValues(metrics.WorkerRunDDLJob, job.Type.String(), metrics.RetLabel(err)).Observe(time.Since(timeStart).Seconds())

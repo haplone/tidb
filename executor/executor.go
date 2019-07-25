@@ -16,6 +16,7 @@ package executor
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"runtime"
 	"sync"
 	"sync/atomic"
@@ -90,6 +91,9 @@ func (e *baseExecutor) base() *baseExecutor {
 // Open initializes children recursively and "childrenResults" according to children's schemas.
 func (e *baseExecutor) Open(ctx context.Context) error {
 	for _, child := range e.children {
+		if e.ctx.GetSessionVars().Log {
+			logutil.Logger(ctx).Info("open exec", zap.String("e", reflect.TypeOf(child).String()))
+		}
 		err := child.Open(ctx)
 		if err != nil {
 			return errors.Trace(err)
@@ -870,6 +874,10 @@ type SelectionExec struct {
 
 // Open implements the Executor Open interface.
 func (e *SelectionExec) Open(ctx context.Context) error {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("open SelectionExec")
+	}
+
 	if err := e.baseExecutor.Open(ctx); err != nil {
 		return errors.Trace(err)
 	}

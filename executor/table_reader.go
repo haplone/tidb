@@ -14,6 +14,8 @@
 package executor
 
 import (
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
 	"time"
 
 	"github.com/pingcap/errors"
@@ -78,6 +80,9 @@ type TableReaderExecutor struct {
 
 // Open initialzes necessary variables for using this executor.
 func (e *TableReaderExecutor) Open(ctx context.Context) error {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("open TableReaderExecutor", zap.Bool("corColInFilter", e.corColInFilter), zap.Bool("corColInAccess", e.corColInAccess))
+	}
 	var err error
 	if e.corColInFilter {
 		e.dagPB.Executors, _, err = constructDistExec(e.ctx, e.plans)
@@ -106,6 +111,12 @@ func (e *TableReaderExecutor) Open(ctx context.Context) error {
 		}
 	}
 	firstPartRanges, secondPartRanges := splitRanges(e.ranges, e.keepOrder, e.desc)
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("range", zap.String("first", firstPartRanges[0].String()))
+		if len(secondPartRanges) > 0 && secondPartRanges[0] != nil {
+			logutil.Logger(ctx).Info("range", zap.String("second", secondPartRanges[0].String()))
+		}
+	}
 	firstResult, err := e.buildResp(ctx, firstPartRanges)
 	if err != nil {
 		e.feedback.Invalidate()

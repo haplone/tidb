@@ -14,6 +14,8 @@
 package core
 
 import (
+	"context"
+	"fmt"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/model"
 	"github.com/pingcap/tidb/expression"
@@ -21,8 +23,10 @@ import (
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/table"
 	"github.com/pingcap/tidb/tablecodec"
+	"github.com/pingcap/tidb/util/logutil"
 	"github.com/pingcap/tidb/util/ranger"
 	"github.com/pingcap/tipb/go-tipb"
+	"go.uber.org/zap"
 )
 
 // ToPB implements PhysicalPlan ToPB interface.
@@ -96,6 +100,10 @@ func (p *PhysicalTableScan) ToPB(ctx sessionctx.Context) (*tipb.Executor, error)
 		Desc:    p.Desc,
 	}
 	err := SetPBColumnsDefaultValue(ctx, tsExec.Columns, p.Columns)
+	if p.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("PhysicalTableScan -> tipb.Executor",
+			zap.String("columns", fmt.Sprintf("%v", len(p.Columns))))
+	}
 	return &tipb.Executor{Tp: tipb.ExecType_TypeTableScan, TblScan: tsExec}, errors.Trace(err)
 }
 

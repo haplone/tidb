@@ -170,6 +170,7 @@ func (ib *WriteStmtBufs) clean() {
 
 // SessionVars is to handle user-defined or global variables in the current session.
 type SessionVars struct {
+	Log bool
 	Concurrency
 	MemQuota
 	BatchSize

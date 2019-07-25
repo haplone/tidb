@@ -16,7 +16,10 @@ package executor
 import (
 	"bytes"
 	"fmt"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
 	"math"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -69,6 +72,9 @@ func newExecutorBuilder(ctx sessionctx.Context, is infoschema.InfoSchema) *execu
 }
 
 func (b *executorBuilder) build(p plannercore.Plan) Executor {
+	if b.ctx.GetSessionVars().Log && p != nil {
+		logutil.Logger(context.Background()).Info("build", zap.String("plan", reflect.TypeOf(p).String()))
+	}
 	switch v := p.(type) {
 	case nil:
 		return nil
@@ -864,12 +870,19 @@ func (b *executorBuilder) buildHashJoin(v *plannercore.PhysicalHashJoin) Executo
 		rightHashKey = append(rightHashKey, rn)
 	}
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("hash join", zap.String("left", reflect.TypeOf(v.Children()[0]).String()))
+	}
 	leftExec := b.build(v.Children()[0])
 	if b.err != nil {
 		b.err = errors.Trace(b.err)
 		return nil
 	}
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("hash join",
+			zap.String("right", reflect.TypeOf(v.Children()[1]).String()), zap.String("innerChildIdx", fmt.Sprintf("%v", v.InnerChildIdx)))
+	}
 	rightExec := b.build(v.Children()[1])
 	if b.err != nil {
 		b.err = errors.Trace(b.err)
@@ -1151,6 +1164,9 @@ func (b *executorBuilder) buildStreamAgg(v *plannercore.PhysicalStreamAgg) Execu
 }
 
 func (b *executorBuilder) buildSelection(v *plannercore.PhysicalSelection) Executor {
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("buildSelection", zap.String("goto child", reflect.TypeOf(v.Children()[0]).String()))
+	}
 	childExec := b.build(v.Children()[0])
 	if b.err != nil {
 		b.err = errors.Trace(b.err)
@@ -1567,6 +1583,9 @@ func constructDistExec(sctx sessionctx.Context, plans []plannercore.PhysicalPlan
 	streaming := true
 	executors := make([]*tipb.Executor, 0, len(plans))
 	for _, p := range plans {
+		if sctx.GetSessionVars().Log {
+			logutil.Logger(context.Background()).Info("distExec", zap.String("plan", reflect.TypeOf(p).String()))
+		}
 		execPB, err := p.ToPB(sctx)
 		if err != nil {
 			return nil, false, errors.Trace(err)
@@ -1580,6 +1599,9 @@ func constructDistExec(sctx sessionctx.Context, plans []plannercore.PhysicalPlan
 }
 
 func (b *executorBuilder) constructDAGReq(plans []plannercore.PhysicalPlan) (dagReq *tipb.DAGRequest, streaming bool, err error) {
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("new tipb DAGRequest")
+	}
 	dagReq = &tipb.DAGRequest{}
 	dagReq.StartTs, err = b.getStartTS()
 	if err != nil {
@@ -1737,12 +1759,18 @@ func buildNoRangeTableReader(b *executorBuilder, v *plannercore.PhysicalTableRea
 		dagReq.OutputOffsets = append(dagReq.OutputOffsets, uint32(i))
 	}
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("new TableReaderExecutor")
+	}
 	return e, nil
 }
 
 // buildTableReader builds a table reader executor. It first build a no range table reader,
 // and then update it ranges from table scan plan.
 func (b *executorBuilder) buildTableReader(v *plannercore.PhysicalTableReader) *TableReaderExecutor {
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("buildTableReader -- buildNoRangeTableReader")
+	}
 	ret, err := buildNoRangeTableReader(b, v)
 	if err != nil {
 		b.err = errors.Trace(err)

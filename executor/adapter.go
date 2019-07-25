@@ -306,6 +306,9 @@ func (a *ExecStmt) handleNoDelayExecutor(ctx context.Context, sctx sessionctx.Co
 
 // buildExecutor build a executor from plan, prepared statement may need additional procedure.
 func (a *ExecStmt) buildExecutor(ctx sessionctx.Context) (Executor, error) {
+	if a.Ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("buildExecutor")
+	}
 	if _, ok := a.Plan.(*plannercore.Execute); !ok {
 		// Do not sync transaction for Execute statement, because the real optimization work is done in
 		// "ExecuteExec.Build".

@@ -14,12 +14,16 @@
 package executor
 
 import (
+	"context"
 	"github.com/pingcap/errors"
 	"github.com/pingcap/tidb/expression"
 	plannercore "github.com/pingcap/tidb/planner/core"
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/types"
 	"github.com/pingcap/tidb/util/chunk"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
+	"reflect"
 )
 
 var (
@@ -93,6 +97,13 @@ type joiner interface {
 func newJoiner(ctx sessionctx.Context, joinType plannercore.JoinType,
 	outerIsRight bool, defaultInner []types.Datum, filter []expression.Expression,
 	lhsColTypes, rhsColTypes []*types.FieldType) joiner {
+
+	if ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("new joiner", zap.String("type", joinType.String()))
+		for _, f := range filter {
+			logutil.Logger(context.Background()).Info("filter(other condition)", zap.String("name", reflect.TypeOf(f).String()))
+		}
+	}
 	base := baseJoiner{
 		ctx:          ctx,
 		conditions:   filter,
