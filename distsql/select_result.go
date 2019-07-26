@@ -97,14 +97,21 @@ func (r *selectResult) fetch(ctx context.Context) {
 	for {
 		var result resultWithErr
 		resultSubset, err := r.resp.Next(ctx)
+
 		if err != nil {
 			result.err = err
 		} else if resultSubset == nil {
 			// If the result is drained, the resultSubset would be nil
+			if r.ctx.GetSessionVars().Log {
+				logutil.Logger(ctx).Info("fetch resp", zap.String("resultSubset", "nil"))
+			}
 			return
 		} else {
 			result.result = resultSubset
 			r.memConsume(int64(resultSubset.MemSize()))
+		}
+		if r.ctx.GetSessionVars().Log {
+			logutil.Logger(ctx).Info("fetch resp", zap.String("exceDetail", resultSubset.GetExecDetails().String()))
 		}
 
 		select {

@@ -172,6 +172,9 @@ func (e *TableReaderExecutor) buildResp(ctx context.Context, ranges []*ranger.Ra
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("new kv.Request in TableReaderExecutor")
+	}
 	result, err := e.SelectResult(ctx, e.ctx, kvReq, e.retTypes(), e.feedback)
 	if err != nil {
 		return nil, errors.Trace(err)

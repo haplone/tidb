@@ -20,6 +20,7 @@ import (
 	"github.com/pingcap/tidb/sessionctx"
 	"github.com/pingcap/tidb/statistics"
 	"github.com/pingcap/tidb/types"
+	"github.com/pingcap/tidb/util/logutil"
 	"golang.org/x/net/context"
 )
 
@@ -31,6 +32,9 @@ const (
 // Select sends a DAG request, returns SelectResult.
 // In kvReq, KeyRanges is required, Concurrency/KeepOrder/Desc/IsolationLevel/Priority are optional.
 func Select(ctx context.Context, sctx sessionctx.Context, kvReq *kv.Request, fieldTypes []*types.FieldType, fb *statistics.QueryFeedback) (SelectResult, error) {
+	if sctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("new SelectResult in distsql")
+	}
 	// For testing purpose.
 	if hook := ctx.Value("CheckSelectRequestHook"); hook != nil {
 		hook.(func(*kv.Request))(kvReq)

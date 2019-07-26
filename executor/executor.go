@@ -123,6 +123,9 @@ func (e *baseExecutor) Schema() *expression.Schema {
 
 // newFirstChunk creates a new chunk to buffer current executor's result.
 func (e *baseExecutor) newFirstChunk() *chunk.Chunk {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("new first chunk", zap.Any("e", reflect.TypeOf(e)))
+	}
 	return chunk.New(e.retTypes(), e.initCap, e.maxChunkSize)
 }
 
@@ -182,6 +185,9 @@ type Executor interface {
 // Next is a wrapper function on e.Next(), it handles some common codes.
 func Next(ctx context.Context, e Executor, chk *chunk.Chunk) error {
 	sessVars := e.base().ctx.GetSessionVars()
+	if sessVars.Log {
+		logutil.Logger(ctx).Info("next", zap.Any("e", reflect.TypeOf(e)))
+	}
 	if atomic.CompareAndSwapUint32(&sessVars.Killed, 1, 0) {
 		return ErrQueryInterrupted
 	}
@@ -883,6 +889,9 @@ func (e *SelectionExec) Open(ctx context.Context) error {
 	}
 	e.childResult = e.children[0].newFirstChunk()
 	e.batched = expression.Vectorizable(e.filters)
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("open SelectionExec", zap.Bool("isBatched", e.batched))
+	}
 	if e.batched {
 		e.selected = make([]bool, 0, chunk.InitialCapacity)
 	}

@@ -245,6 +245,9 @@ func GetRows4Test(ctx context.Context, sctx sessionctx.Context, rs sqlexec.Recor
 	if rs == nil {
 		return nil, nil
 	}
+	if sctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("start to exec")
+	}
 	var rows []chunk.Row
 	chk := rs.NewChunk()
 	for {
