@@ -100,7 +100,7 @@ func (e *TableReaderExecutor) Open(ctx context.Context) error {
 		}
 	}
 
-	e.resultHandler = &tableResultHandler{}
+	e.resultHandler = &tableResultHandler{Log: e.ctx.GetSessionVars().Log}
 	// Split ranges here since the unsigned part and signed part will swap their position when encoding the range to kv ranges.
 	if e.feedback != nil && e.feedback.Hist() != nil {
 		// EncodeInt don't need *statement.Context.
@@ -194,6 +194,7 @@ type tableResultHandler struct {
 	result         distsql.SelectResult
 
 	optionalFinished bool
+	Log              bool
 }
 
 func (tr *tableResultHandler) open(optionalResult, result distsql.SelectResult) {
@@ -208,6 +209,9 @@ func (tr *tableResultHandler) open(optionalResult, result distsql.SelectResult) 
 }
 
 func (tr *tableResultHandler) nextChunk(ctx context.Context, chk *chunk.Chunk) error {
+	if tr.Log {
+		logutil.Logger(ctx).Info("tableResultHandler nextChunk", zap.Bool("isOptional", tr.optionalFinished))
+	}
 	if !tr.optionalFinished {
 		err := tr.optionalResult.Next(ctx, chk)
 		if err != nil {

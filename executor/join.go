@@ -14,6 +14,8 @@
 package executor
 
 import (
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -203,6 +205,9 @@ func (e *HashJoinExec) getJoinKeyFromChkRow(isOuterKey bool, row chunk.Row, keyB
 //		- 我提供了一个 Chunk 给你，你直接用这个 Chunk 去拉 Outer 数据吧，不用再重新申请内存了；
 //		- 我的 Outer Chunk 已经用完了，你需要把拉取到的 Outer 数据直接传给我，不要给别人了。
 func (e *HashJoinExec) fetchOuterChunks(ctx context.Context) {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("fetchOuterChunks")
+	}
 	hasWaitedForInner := false
 	for {
 		if e.finished.Load().(bool) {
@@ -271,6 +276,10 @@ func (e *HashJoinExec) wait4Inner() (finished bool, err error) {
 // 读 Inner 表数据的过程由 fetchInnerRows 这个函数完成。
 // 这个过程会不断调用 Child 的 NextChunk 接口，把每次函数调用所获取的 Chunk 存储到 innerResult 这个 List 中供接下来的计算使用。
 func (e *HashJoinExec) fetchInnerRows(ctx context.Context, chkCh chan<- *chunk.Chunk, doneCh chan struct{}) {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("fetchInnerRows")
+	}
+
 	defer close(chkCh)
 	e.innerResult = chunk.NewList(e.innerExec.retTypes(), e.initCap, e.maxChunkSize)
 	e.innerResult.GetMemTracker().AttachTo(e.memTracker)
@@ -285,6 +294,9 @@ func (e *HashJoinExec) fetchInnerRows(ctx context.Context, chkCh chan<- *chunk.C
 		default:
 			if e.finished.Load().(bool) {
 				return
+			}
+			if e.ctx.GetSessionVars().Log {
+				logutil.Logger(ctx).Info("fetchInnerRows next chunk")
 			}
 			chk := e.children[e.innerIdx].newFirstChunk()
 			err = Next(ctx, e.innerExec, chk)
@@ -307,6 +319,9 @@ func (e *HashJoinExec) fetchInnerRows(ctx context.Context, chkCh chan<- *chunk.C
 }
 
 func (e *HashJoinExec) initializeForProbe() {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("initializeForProbe")
+	}
 	// e.outerResultChs is for transmitting the chunks which store the data of outerExec,
 	// it'll be written by outer worker goroutine, and read by join workers.
 	e.outerResultChs = make([]chan *chunk.Chunk, e.concurrency)
@@ -341,6 +356,9 @@ func (e *HashJoinExec) initializeForProbe() {
 }
 
 func (e *HashJoinExec) fetchOuterAndProbeHashTable(ctx context.Context) {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("fetchOuterAndProbeHashTable")
+	}
 	e.initializeForProbe()
 	e.workerWaitGroup.Add(1)
 	go util.WithRecovery(func() { e.fetchOuterChunks(ctx) }, e.finishOuterFetcher)
@@ -377,6 +395,9 @@ func (e *HashJoinExec) waitJoinWorkersAndCloseResultChan() {
 }
 
 func (e *HashJoinExec) runJoinWorker(workerID uint) {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("runJoinWorker", zap.Uint("workId", workerID))
+	}
 	var (
 		outerResult *chunk.Chunk
 		selected    = make([]bool, 0, chunk.InitialCapacity)
@@ -548,6 +569,9 @@ func (e *HashJoinExec) finishFetchInnerAndBuildHashTable(r interface{}) {
 }
 
 func (e *HashJoinExec) fetchInnerAndBuildHashTable(ctx context.Context) {
+	if e.ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("fetchInnerAndBuildHashTable")
+	}
 	// innerResultCh transfer inner result chunk from inner fetch to build hash table.
 	innerResultCh := make(chan *chunk.Chunk, e.concurrency)
 	doneCh := make(chan struct{})
@@ -596,6 +620,9 @@ func (e *HashJoinExec) buildHashTableForList(innerResultCh chan *chunk.Chunk) er
 			return nil
 		}
 		numRows := chk.NumRows()
+		if e.ctx.GetSessionVars().Log {
+			logutil.Logger(context.Background()).Info("got chunk for hashtable")
+		}
 		for j := 0; j < numRows; j++ {
 			hasNull, keyBuf, err = e.getJoinKeyFromChkRow(false, chk.GetRow(j), keyBuf)
 			if err != nil {

@@ -186,7 +186,7 @@ type Executor interface {
 func Next(ctx context.Context, e Executor, chk *chunk.Chunk) error {
 	sessVars := e.base().ctx.GetSessionVars()
 	if sessVars.Log {
-		logutil.Logger(ctx).Info("next", zap.Any("e", reflect.TypeOf(e)))
+		logutil.Logger(ctx).Info("volcano next", zap.Any("e", reflect.TypeOf(e)))
 	}
 	if atomic.CompareAndSwapUint32(&sessVars.Killed, 1, 0) {
 		return ErrQueryInterrupted

@@ -203,6 +203,9 @@ func (r *selectResult) getSelectResp() error {
 }
 
 func (r *selectResult) readRowsData(chk *chunk.Chunk) (err error) {
+	if r.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("readRowsData in selectResult", zap.String("label", r.label))
+	}
 	rowsData := r.selectResp.Chunks[r.respChkIdx].RowsData
 	decoder := codec.NewDecoder(chk, r.ctx.GetSessionVars().Location())
 	for !chk.IsFull() && len(rowsData) > 0 {
