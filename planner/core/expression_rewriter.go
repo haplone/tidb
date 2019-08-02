@@ -14,6 +14,10 @@
 package core
 
 import (
+	"context"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
+	"reflect"
 	"strconv"
 	"strings"
 
@@ -103,6 +107,9 @@ func (b *planBuilder) rewriteWithPreprocess(exprNode ast.ExprNode, p LogicalPlan
 	rewriter.asScalar = asScalar
 	rewriter.preprocess = preprocess
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("rewrite expression", zap.Any("ast.ExprNode", reflect.TypeOf(exprNode)))
+	}
 	expr, resultPlan, err := b.rewriteExprNode(rewriter, exprNode, asScalar)
 	return expr, resultPlan, errors.Trace(err)
 }
@@ -236,6 +243,9 @@ func (er *expressionRewriter) buildSubquery(subq *ast.SubqueryExpr) (LogicalPlan
 
 // Enter implements Visitor interface.
 func (er *expressionRewriter) Enter(inNode ast.Node) (ast.Node, bool) {
+	if er.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("enter er", zap.Any("ast.Node", reflect.TypeOf(inNode)))
+	}
 	switch v := inNode.(type) {
 	case *ast.AggregateFuncExpr:
 		index, ok := -1, false
@@ -806,6 +816,9 @@ func (er *expressionRewriter) handleScalarSubquery(v *ast.SubqueryExpr) (ast.Nod
 
 // Leave implements Visitor interface.
 func (er *expressionRewriter) Leave(originInNode ast.Node) (retNode ast.Node, ok bool) {
+	if er.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("leave er", zap.Any("ast.Node", reflect.TypeOf(originInNode)))
+	}
 	if er.err != nil {
 		return retNode, false
 	}

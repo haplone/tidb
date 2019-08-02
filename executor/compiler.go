@@ -42,6 +42,10 @@ func (c *Compiler) Compile(ctx context.Context, stmtNode ast.StmtNode) (*ExecStm
 	}
 
 	infoSchema := GetInfoSchema(c.Ctx)
+	if c.Ctx.GetSessionVars().Log {
+		logutil.Logger(ctx).Info("preprocess")
+	}
+
 	if err := plannercore.Preprocess(c.Ctx, stmtNode, infoSchema, false); err != nil {
 		return nil, errors.Trace(err)
 	}

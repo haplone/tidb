@@ -72,8 +72,10 @@ func (s *testSuite) TestJoin11(c *C) {
 	tk.MustExec("create table t1(b1 int, b2 int)")
 	tk.MustExec("insert into t values(1,1),(2,2)")
 	tk.MustExec("insert into t1 values(2,3),(4,4)")
+	tk.Se.GetSessionVars().Log = true
 	result := tk.MustQuery("select * from t left outer join t1 on t.c1 = t1.b1 where t.c1 = 1 or t1.b2 > 20")
 	result.Check(testkit.Rows("1 1 <nil> <nil>"))
+	tk.Se.GetSessionVars().Log = false
 	//result = tk.MustQuery("select * from t1 right outer join t on t.c1 = t1.c1 where t.c1 = 1 or t1.c2 > 20")
 	//result.Check(testkit.Rows("<nil> <nil> 1 1"))
 	//result = tk.MustQuery("select * from t right outer join t1 on t.c1 = t1.c1 where t.c1 = 1 or t1.c2 > 20")

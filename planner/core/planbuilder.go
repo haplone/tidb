@@ -15,8 +15,12 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"github.com/pingcap/tidb/util/chunk"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
+	"reflect"
 	"strings"
 
 	"github.com/cznic/mathutil"
@@ -183,6 +187,9 @@ type planBuilder struct {
 }
 
 func (b *planBuilder) build(node ast.Node) (Plan, error) {
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("build logicalPlan", zap.Any("ast", reflect.TypeOf(node)))
+	}
 	b.optFlag = flagPrunColumns
 	switch x := node.(type) {
 	case *ast.AdminStmt:

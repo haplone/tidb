@@ -14,7 +14,10 @@
 package core
 
 import (
+	"context"
 	"fmt"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
 	"math"
 	"math/bits"
 	"reflect"
@@ -134,6 +137,9 @@ func (b *planBuilder) buildAggregation(p LogicalPlan, aggFuncList []*ast.Aggrega
 }
 
 func (b *planBuilder) buildResultSetNode(node ast.ResultSetNode) (p LogicalPlan, err error) {
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("buildResultSetNode", zap.Any("ast", reflect.TypeOf(node)))
+	}
 	switch x := node.(type) {
 	case *ast.Join:
 		return b.buildJoin(x)
@@ -331,11 +337,18 @@ func (b *planBuilder) buildJoin(joinNode *ast.Join) (LogicalPlan, error) {
 
 	b.optFlag = b.optFlag | flagPredicatePushDown
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("build left table for join", zap.Any("join type", joinNode.Tp))
+	}
+
 	leftPlan, err := b.buildResultSetNode(joinNode.Left)
 	if err != nil {
 		return nil, errors.Trace(err)
 	}
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("build right table for join")
+	}
 	rightPlan, err := b.buildResultSetNode(joinNode.Right)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -1648,6 +1661,9 @@ func (b *planBuilder) unfoldWildStar(p LogicalPlan, selectFields []*ast.SelectFi
 		dbName := field.WildCard.Schema
 		tblName := field.WildCard.Table
 		findTblNameInSchema := false
+		if b.ctx.GetSessionVars().Log {
+			logutil.Logger(context.Background()).Info("add all columns", zap.String("table", tblName.L))
+		}
 		for _, col := range p.Schema().Columns {
 			if (dbName.L == "" || dbName.L == col.DBName.L) &&
 				(tblName.L == "" || tblName.L == col.TblName.L) &&
@@ -1907,6 +1923,9 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 		dbName = model.NewCIStr(b.ctx.GetSessionVars().CurrentDB)
 	}
 
+	if b.ctx.GetSessionVars().Log {
+		logutil.Logger(context.Background()).Info("buildDataSource", zap.String("table", tn.Name.L))
+	}
 	tbl, err := b.is.TableByName(dbName, tn.Name)
 	if err != nil {
 		return nil, errors.Trace(err)
@@ -1932,6 +1951,7 @@ func (b *planBuilder) buildDataSource(tn *ast.TableName) (LogicalPlan, error) {
 	}
 	var statisticTable *statistics.Table
 	if _, ok := tbl.(table.PartitionedTable); !ok {
+		// toDo need more analysis
 		statisticTable = getStatsTable(b.ctx, tbl.Meta(), tbl.Meta().ID)
 	}
 

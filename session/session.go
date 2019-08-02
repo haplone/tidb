@@ -855,8 +855,7 @@ func (s *session) Execute(ctx context.Context, sql string) (recordSets []sqlexec
 }
 
 func (s *session) execute(ctx context.Context, sql string) (recordSets []sqlexec.RecordSet, err error) {
-	if strings.Contains(sql, "t1") {
-		s.GetSessionVars().Log = true
+	if s.GetSessionVars().Log {
 		logutil.Logger(ctx).Info(" ---------- execute sql: ", zap.String("sql", sql))
 	}
 	s.PrepareTxnCtx(ctx)

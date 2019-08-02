@@ -14,7 +14,11 @@
 package core
 
 import (
+	"context"
+	"github.com/pingcap/tidb/util/logutil"
+	"go.uber.org/zap"
 	"math"
+	"reflect"
 
 	"github.com/pingcap/errors"
 	"github.com/pingcap/parser/ast"
@@ -150,7 +154,13 @@ func logicalOptimize(flag uint64, logic LogicalPlan) (LogicalPlan, error) {
 		// We use a bitmask to record which opt rules should be used. If the i-th bit is 1, it means we should
 		// apply i-th optimizing rule.
 		if flag&(1<<uint(i)) == 0 {
+			if logic.context().GetSessionVars().Log {
+				logutil.Logger(context.Background()).Info("skip logic optimize", zap.Any("logic", reflect.TypeOf(logic)), zap.Any("rule", reflect.TypeOf(rule)))
+			}
 			continue
+		}
+		if logic.context().GetSessionVars().Log {
+			logutil.Logger(context.Background()).Info("use logic optimize", zap.Any("logic", reflect.TypeOf(logic)), zap.Any("rule", reflect.TypeOf(rule)))
 		}
 		logic, err = rule.optimize(logic)
 		if err != nil {
